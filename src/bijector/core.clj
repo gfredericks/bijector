@@ -49,7 +49,7 @@
 
 (declare NATURAL-LISTS)
 
-(defn list-of
+(defn lists-of
   "Creates a new type which is arbitrary-length lists of elements of the
   given type."
   [t]
@@ -86,8 +86,8 @@
       (fn [xs] (from NATURAL-LISTS (map (partial from t) xs))))))
 
 (def NATURAL-LISTS
-  (let [TERNARY (list-of (new EnumerationDataType [0 1 2])),
-        BINS    (list-of (new EnumerationDataType [0 1])),
+  (let [TERNARY (lists-of (new EnumerationDataType [0 1 2])),
+        BINS    (lists-of (new EnumerationDataType [0 1])),
         split-on-twos
           (fn [coll]
             (loop [xs coll, ret []]
@@ -118,3 +118,14 @@
             (flatten)
             (from TERNARY)
             (inc)))))))
+
+(defn strings-with-chars
+  [chars]
+  (let [char-lists (lists-of (new EnumerationDataType chars))]
+    (new InfiniteDataType
+      (fn [n] (apply str (to char-lists n)))
+      (partial from char-lists))))
+
+(def SIMPLE-ASCII
+  (strings-with-chars
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"))

@@ -28,7 +28,11 @@
         (is (= el (to t n)))))))
 
 (deftest basic-types-test
-  (doseq [t [NATURALS INTEGERS (list-of BOOLEANS) NATURAL-LISTS]]
+  (doseq [t [NATURALS
+             INTEGERS
+             (lists-of BOOLEANS)
+             NATURAL-LISTS
+             SIMPLE-ASCII]]
     (test-a-type t)))
 
 (deftest enumeration-type-test
@@ -42,9 +46,9 @@
         (is (= x (from t (to t x))))))))
 
 
-(deftest list-of-test
+(deftest lists-of-test
   (type-has-elements
-    (list-of INTEGERS)
+    (lists-of INTEGERS)
     [1 2 3]
     []
     [-1 -2 -1]
