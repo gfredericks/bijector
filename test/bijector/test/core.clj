@@ -1,5 +1,6 @@
 (ns bijector.test.core
   (:use [bijector.core])
+  (:import (bijector.core EnumerationDataType))
   (:use [clojure.test]))
 
 (defn- **
@@ -27,10 +28,21 @@
         (is (= el (to t n)))))))
 
 (deftest basic-types-test
-  (doseq [t [NATURALS INTEGERS NATURAL-LISTS]]
+  (doseq [t [NATURALS INTEGERS (list-of BOOLEANS) NATURAL-LISTS]]
     (test-a-type t)))
 
-#_(deftest list-of-test
+(deftest enumeration-type-test
+  (testing "Binary"
+    (let [t (new EnumerationDataType [0 1])]
+      (doseq [x [1 2]]
+        (is (= x (from t (to t x)))))))
+  (testing "Ternary"
+    (let [t (new EnumerationDataType [0 1 2])]
+      (doseq [x [1 2 3]]
+        (is (= x (from t (to t x))))))))
+
+
+(deftest list-of-test
   (type-has-elements
     (list-of INTEGERS)
     [1 2 3]

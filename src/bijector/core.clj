@@ -60,13 +60,12 @@
     (let [c (cardinality t)]
       (new InfiniteDataType
         (fn [n]
-          (loop [n n, [p & ps :as ps*] '(1), l 0]
+          (loop [n n, [p & ps :as ps*] '(1)]
             (if (> n p)
               (recur
                 (- n p)
-                (cons (* p c) ps*)
-                (inc l))
-              (loop [n n, [p & ps] ps, res []]
+                (cons (* p c) ps*))
+              (loop [n (dec n), [p & ps] ps, res ()]
                 (if p
                   ; TODO: We could do this faster if we knew the args were bigints
                   ;       (BigInteger#divideAndRemainder)
@@ -75,7 +74,7 @@
                   res)))))
         (fn [xs]
           (let [smaller-lists (apply + (take (count xs) (iterate #(* c %) 1)))]
-            (loop [b 1, n smaller-lists, [x & xs :as xs*] xs]
+            (loop [b 1, n (inc smaller-lists), [x & xs :as xs*] xs]
               (if (empty? xs*)
                 n
                 (recur
@@ -87,18 +86,35 @@
       (fn [xs] (from NATURAL-LISTS (map (partial from t) xs))))))
 
 (def NATURAL-LISTS
-  (let [TERNARY (new EnumerationDataType [0 1 2]),
-        BINS    (new EnumerationDataType [0 1]),
+  (let [TERNARY (list-of (new EnumerationDataType [0 1 2])),
+        BINS    (list-of (new EnumerationDataType [0 1])),
         split-on-twos
           (fn [coll]
             (loop [xs coll, ret []]
               (if (empty? xs)
                 (conj ret [])
-                (let [[a b] (split-with (complement #{2}) xs)]
-                  (recur (rest b) (conj ret a))))))]
+                (let [[a b] (split-with (complement #{2}) xs),
+                      cra (conj ret a)]
+                  (if (empty? b)
+                    cra
+                    (recur (rest b) cra))))))]
     (new InfiniteDataType
       (fn [n]
-        (->> n (to TERNARY) split-on-twos (map (partial from BINS))))
+        (if (= 1 n)
+          []
+          (->>
+            n
+            (dec)
+            (to TERNARY)
+            (split-on-twos)
+            (map (partial from BINS)))))
       (fn [xs]
-        (->> xs (map (partial to BINS)) (interpose 2) (from TERNARY))))))
-
+        (if (empty? xs)
+          1
+          (->>
+            xs
+            (map (partial to BINS))
+            (interpose 2)
+            (flatten)
+            (from TERNARY)
+            (inc)))))))
