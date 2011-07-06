@@ -20,16 +20,17 @@
 (defn- type-has-elements
   [t & els]
   (doseq [el els]
-    (let [n (from t el)]
-      (is (integer? n))
-      (is (pos? n))
-      (is (= el (to t n))))))
+    (testing (pr-str el)
+      (let [n (from t el)]
+        (is (integer? n))
+        (is (pos? n))
+        (is (= el (to t n)))))))
 
 (deftest basic-types-test
-  (doseq [t [NATURALS INTEGERS]]
+  (doseq [t [NATURALS INTEGERS NATURAL-LISTS]]
     (test-a-type t)))
 
-(deftest list-of-test
+#_(deftest list-of-test
   (type-has-elements
     (list-of INTEGERS)
     [1 2 3]
