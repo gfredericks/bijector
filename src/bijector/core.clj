@@ -3,7 +3,8 @@
 (defprotocol IDataType
   (cardinality [this])
   (to [this n])
-  (from [this x]))
+  (from [this x])
+  (element? [this x]))
 
 (defn infinite? [t] (= :infinity (cardinality t)))
 (def finite? (complement infinite?))
@@ -13,17 +14,19 @@
   [(comp (partial to t2) (partial from t1))
    (comp (partial to t1) (partial from t2))])
 
-(defrecord DataType [s t f]
+(defrecord DataType [s t f e]
   IDataType
   (cardinality [_] (s))
   (to [_ n] (t n))
-  (from [_ x] (f x)))
+  (from [_ x] (f x))
+  (element? [_ x] (e x)))
 
-(defrecord InfiniteDataType [t f]
+(defrecord InfiniteDataType [t f e]
   IDataType
   (cardinality [_] :infinity)
   (to [_ n] (t n))
-  (from [_ x] (f x)))
+  (from [_ x] (f x))
+  (element? [_ x] (e x)))
 
 (defrecord EnumerationDataType [elements]
   IDataType
@@ -36,21 +39,26 @@
   ; TODO -- this definitely ought to be memoized, right?
   (from [_ x]
     (let [[_ n] (first (filter #(= x (first %)) (map vector elements (rest (range)))))]
-      (or n (throw (new Exception (format "%s is not an element of %s" (pr-str x) (pr-str elements))))))))
+      (or n (throw (new Exception (format "%s is not an element of %s" (pr-str x) (pr-str elements)))))))
+  ; TODO -- this definitely ought to be memoized, right?
+  (element? [_ x]
+    (contains? (set elements) x)))
 
 (def BOOLEANS (new EnumerationDataType [true false]))
 
 (def NATURALS
   (new InfiniteDataType
     identity
-    identity))
+    identity
+    #(and (integer? %) (pos? %))))
 
 (def INTEGERS
   (new InfiniteDataType
     (fn [n]
       (cond (= 1 n) 0, (even? n) (/ n 2), (odd? n) (- (/ (dec n) 2))))
     (fn [x]
-      (cond (zero? x) 1, (neg? x) (inc (* 2 (- x))), (pos? x) (* 2 x)))))
+      (cond (zero? x) 1, (neg? x) (inc (* 2 (- x))), (pos? x) (* 2 x)))
+    integer?))
 
 (declare NATURAL-LISTS)
 
@@ -85,10 +93,18 @@
                 (recur
                   (* b c)
                   (+ n (* b (dec (from t x))))
-                  xs)))))))
+                  xs)))))
+        (fn [coll]
+          (and
+            (sequential? coll)
+            (every? #(element? t %) coll)))))
     (new InfiniteDataType
       (fn [n] (map (partial to t) (to NATURAL-LISTS n)))
-      (fn [xs] (from NATURAL-LISTS (map (partial from t) xs))))))
+      (fn [xs] (from NATURAL-LISTS (map (partial from t) xs)))
+      (fn [coll]
+        (and
+          (sequential? coll)
+          (every? #(element? t %) coll))))))
 
 (def NATURAL-LISTS
   (let [TERNARY (lists-of (new EnumerationDataType [0 1 2])),
@@ -122,14 +138,20 @@
             (interpose 2)
             (flatten)
             (from TERNARY)
-            (inc)))))))
+            (inc))))
+      (fn [coll]
+        (and
+          (sequential? coll)
+          (every? #(element? NATURALS %) coll))))))
 
 (defn strings-with-chars
   [chars]
-  (let [char-lists (lists-of (new EnumerationDataType chars))]
+  (let [char-lists (lists-of (new EnumerationDataType chars)),
+        char-set (set chars)]
     (new InfiniteDataType
       (fn [n] (apply str (to char-lists n)))
-      (partial from char-lists))))
+      (partial from char-lists)
+      (fn [s] (and (string? s) (every? #(contains? char-set %) s))))))
 
 (def SIMPLE-ASCII
   (strings-with-chars
