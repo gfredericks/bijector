@@ -8,6 +8,11 @@
 (defn infinite? [t] (= :infinity (cardinality t)))
 (def finite? (complement infinite?))
 
+(defn make-converters-between
+  [t1 t2]
+  [(comp (partial to t2) (partial from t1))
+   (comp (partial to t1) (partial from t2))])
+
 (defrecord DataType [s t f]
   IDataType
   (cardinality [_] (s))
@@ -128,4 +133,4 @@
 
 (def SIMPLE-ASCII
   (strings-with-chars
-    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"))
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r"))
