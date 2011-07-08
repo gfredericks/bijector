@@ -144,6 +144,34 @@
           (sequential? coll)
           (every? #(element? NATURALS %) coll))))))
 
+(defn union-type
+  [t1 t2]
+  (cond
+    (finite? t1)
+      (let [c1 (cardinality t1),
+            c2 (cardinality t2),
+            c3 (if (= :infinity c2) c2 (+ c1 c2))]
+        (new DataType
+          (constantly c3)
+          (fn [n] (if (> n c1) (to t2 (- n c1)) (to t1 n)))
+          (fn [x]
+            (if (element? t1 x)
+              (from t1 x)
+              (+ c1 (from t2 x))))
+          (fn [x] (or (element? t1 x) (element? t2 x)))))
+    (finite? t2) (union-type t2 t1)
+    :else ; both infinite
+      (new InfiniteDataType
+        (fn [n]
+          (if (odd? n)
+            (to t1 (/ (inc n) 2))
+            (to t2 (/ n 2))))
+        (fn [x]
+          (if (element? t1 x)
+            (dec (* 2 (from t1 x)))
+            (* 2 (from t2 x))))
+        (fn [x] (or (element? t1 x) (element? t2 x))))))
+
 (defn strings-with-chars
   [chars]
   (let [char-lists (lists-of (new EnumerationDataType chars)),

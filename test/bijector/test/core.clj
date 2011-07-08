@@ -45,6 +45,13 @@
       (doseq [x [1 2 3]]
         (is (= x (from t (to t x))))))))
 
+(deftest union-types-test
+  (doseq [t [(union-type NATURAL-LISTS SIMPLE-ASCII)
+             (union-type (lists-of BOOLEANS) NATURALS)]]
+    (test-a-type t))
+  (let [t (union-type NATURAL-LISTS SIMPLE-ASCII)]
+    (type-has-elements t [1 2 3] [] "" "[1 2 3]")))
+
 
 (deftest lists-of-test
   (type-has-elements
