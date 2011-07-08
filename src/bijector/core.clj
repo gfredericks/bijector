@@ -144,6 +144,13 @@
           (sequential? coll)
           (every? #(element? NATURALS %) coll))))))
 
+(defn tuples-of
+  "Like lists-of, but for lists of a fixed size."
+  [t size]
+  (if (finite? t)
+    (new DataType))
+
+
 (defn finite-union-type
   "Arguments should be constant functions returning the type.
   This delayed evaluation allows recursive types."
