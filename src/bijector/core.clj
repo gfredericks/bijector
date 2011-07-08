@@ -203,6 +203,7 @@
     " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r"))
 
 (def NESTED-NATURAL-LISTS
-  (infinite-union-type
-    (constantly NATURALS)
-    (fn [] (lists-of NESTED-NATURAL-LISTS))))
+  (lists-of
+    (infinite-union-type
+      (constantly NATURALS)
+      (fn [] NESTED-NATURAL-LISTS))))
