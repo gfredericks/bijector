@@ -52,6 +52,9 @@
   (let [t (union-type NATURAL-LISTS SIMPLE-ASCII)]
     (type-has-elements t [1 2 3] [] "" "[1 2 3]")))
 
+(deftest recursive-types-test
+  (test-a-type NESTED-NATURAL-LISTS)
+  (type-has-elements NESTED-NATURAL-LISTS 1 [] [[[]]] [[2 3 [4]] 5 6 []]))
 
 (deftest lists-of-test
   (type-has-elements

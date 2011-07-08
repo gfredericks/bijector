@@ -144,33 +144,50 @@
           (sequential? coll)
           (every? #(element? NATURALS %) coll))))))
 
+(defn finite-union-type
+  "Arguments should be constant functions returning the type.
+  This delayed evaluation allows recursive types."
+  [ft1 ft2]
+  (let [c1 (delay (cardinality (ft1))),
+        c2 (delay (cardinality (ft2))),
+        c3 (delay (if (= :infinity c2) c2 (+ c1 c2))),
+        t1 (delay (ft1)),
+        t2 (delay (ft2))]
+    (new DataType
+      (partial deref c3)
+      (fn [n] (if (> n @c1) (to @t2 (- n @c1)) (to @t1 n)))
+      (fn [x]
+        (if (element? @t1 x)
+          (from @t1 x)
+          (+ @c1 (from @t2 x))))
+      (fn [x] (or (element? @t1 x) (element? @t2 x))))))
+
+(defn infinite-union-type
+  "Arguments should be constant functions returning the type.
+  This delayed evaluation allows recursive types."
+  [ft1 ft2]
+  (let [t1 (delay (ft1)),
+        t2 (delay (ft2))]
+    (new InfiniteDataType
+      (fn [n]
+        (if (odd? n)
+          (to @t1 (/ (inc n) 2))
+          (to @t2 (/ n 2))))
+      (fn [x]
+        (if (element? @t1 x)
+          (dec (* 2 (from @t1 x)))
+          (* 2 (from @t2 x))))
+      (fn [x] (or (element? @t1 x) (element? @t2 x))))))
+
 (defn union-type
   [t1 t2]
   (cond
     (finite? t1)
-      (let [c1 (cardinality t1),
-            c2 (cardinality t2),
-            c3 (if (= :infinity c2) c2 (+ c1 c2))]
-        (new DataType
-          (constantly c3)
-          (fn [n] (if (> n c1) (to t2 (- n c1)) (to t1 n)))
-          (fn [x]
-            (if (element? t1 x)
-              (from t1 x)
-              (+ c1 (from t2 x))))
-          (fn [x] (or (element? t1 x) (element? t2 x)))))
-    (finite? t2) (union-type t2 t1)
-    :else ; both infinite
-      (new InfiniteDataType
-        (fn [n]
-          (if (odd? n)
-            (to t1 (/ (inc n) 2))
-            (to t2 (/ n 2))))
-        (fn [x]
-          (if (element? t1 x)
-            (dec (* 2 (from t1 x)))
-            (* 2 (from t2 x))))
-        (fn [x] (or (element? t1 x) (element? t2 x))))))
+      (finite-union-type (constantly t1) (constantly t2))
+    (finite? t2)
+      (union-type t2 t1)
+    :else
+      (infinite-union-type (constantly t1) (constantly t2))))
 
 (defn strings-with-chars
   [chars]
@@ -184,3 +201,8 @@
 (def SIMPLE-ASCII
   (strings-with-chars
     " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r"))
+
+(def NESTED-NATURAL-LISTS
+  (infinite-union-type
+    (constantly NATURALS)
+    (fn [] (lists-of NESTED-NATURAL-LISTS))))
