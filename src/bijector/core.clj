@@ -209,6 +209,13 @@
   (strings-with-chars
     " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r"))
 
+; Idea: this doesn't seem to be a very even definition,
+;       for example note the superexponential growth of
+;       the sequence [1], [[1]], [[[1]]], [[[[1]]]], ...
+;       when it ought to only be exponential. There might
+;       be cool tricks we could do similar to how the
+;       NATURAL-LISTS type was defined, but using base 5 or
+;       something like that.
 (def NESTED-NATURAL-LISTS
   (lists-of
     (infinite-union-type
