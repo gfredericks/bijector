@@ -54,7 +54,7 @@
 
 (deftest recursive-types-test
   (test-a-type NESTED-NATURAL-LISTS)
-  (type-has-elements NESTED-NATURAL-LISTS 1 [] [[[]]] [[2 3 [4]] 5 6 []]))
+  (type-has-elements NESTED-NATURAL-LISTS 1 [] [[[]]] [[2 3 [4]] 5 6 []] (range 1 20)))
 
 (deftest lists-of-test
   (type-has-elements
@@ -62,4 +62,5 @@
     [1 2 3]
     []
     [-1 -2 -1]
-    [500007]))
+    [500007]
+    (range 20)))
