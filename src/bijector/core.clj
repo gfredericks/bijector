@@ -1,4 +1,5 @@
 (ns bijector.core
+  (:use [clojure.contrib.seq-utils :only [separate]])
   (:require [bijector.string-partitions :as parts]))
 
 (defprotocol IDataType
@@ -236,7 +237,11 @@
   {:pre [(not (empty? ts))
          (every? finite? ts)]}
   (if (= 1 (count ts))
-    (first ts)
+    (wrap-type
+      (first ts)
+      list
+      first
+      #(and (= 1 (count %)) (element? (first ts) (first %))))
     (let [c (apply * (map cardinality ts))]
       (new DataType
         (constantly c)
@@ -268,7 +273,11 @@
   {:pre [(not (empty? ts))
          (every? infinite? ts)]}
   (if (= 1 (count ts))
-    (first ts)
+    (wrap-type
+      (first ts)
+      list
+      first
+      #(and (= 1 (count %)) (element? (first ts) (first %))))
     (wrap-type
       (natural-tuples-type (count ts))
       (fn [ns]
@@ -279,12 +288,44 @@
         (and (= (count coll) (count ts))
              (every? (fn [v t] (element? t v)) (map vector coll ts)))))))
 
-#_(defn cartesian-product-type
+(defn cartesian-product-type
   [& ts]
-  (let [card (if (some infinite? ts) :infinity (reduce * (map cardinality ts)))]
-    (new DataType
-      (constantly card)
-      (fn [n]))))
+  {:pre [(not (empty? ts))]}
+  (let [[finites infinites] (separate (comp finite? first) (map vector ts (range))),
+        finite-product
+          (if-not (empty? finites)
+            (apply finite-cartesian-product-type (map first finites))),
+        infinite-product
+          (if-not (empty? infinites)
+            (apply infinite-cartesian-product-type (map first infinites)))]
+    (cond
+      (empty? finites) infinite-product
+      (empty? infinites) finite-product
+      :else
+        (let [finite-card (cardinality finite-product)]
+          (new InfiniteDataType
+            (fn [n]
+              (let [n (dec n),
+                    finite-n (rem n finite-card),
+                    infinite-n (quot n finite-card),
+                    finite-val (to finite-product (inc finite-n)),
+                    infinite-val (to infinite-product (inc infinite-n)),
+                    finite-with-index (map vector finite-val (map last finites)),
+                    infinite-with-index (map vector infinite-val (map last infinites))]
+                (->>
+                  (concat finite-with-index infinite-with-index)
+                  (sort-by last)
+                  (map first))))
+            (fn [coll]
+              (let [x-with-type (map vector coll ts),
+                    [finites infinites] (separate (comp finite? second) x-with-type),
+                    finite-n (from finite-product (map first finites)),
+                    infinite-n (from infinite-product (map first infinites))]
+                (inc (+ (dec finite-n) (* (dec infinite-n) finite-card)))))
+            (fn [coll]
+              (and (= (count coll) (count ts))
+                   (every? (fn [v t] (element? t v)) (map vector coll ts)))))))))
+      
 
 (defn strings-with-chars
   [chars]

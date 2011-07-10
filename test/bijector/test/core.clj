@@ -16,7 +16,8 @@
 (defn- test-a-type
   [t]
   (doseq [n nz]
-    (is (= n (->> n (to t) (from t))))))
+    (testing (str "with index " n)
+      (is (= n (->> n (to t) (from t)))))))
 
 (defn- type-has-elements
   [t & els]
@@ -99,8 +100,25 @@
                         NESTED-NATURAL-LISTS
                         INTEGERS]]
     (testing "pairs of types"
-      (for [t1 infinite-types, t2 infinite-types]
+      (doseq [t1 infinite-types, t2 infinite-types]
         (test-a-type (infinite-cartesian-product-type t1 t2))))
     (testing "triples of types"
-      (for [t1 infinite-types, t2 infinite-types, t3 infinite-types]
+      (doseq [t1 infinite-types, t2 infinite-types, t3 infinite-types]
         (test-a-type (infinite-cartesian-product-type t1 t2 t3))))))
+
+(deftest cartesian-product-type-test
+  (let [infinite-types [NATURALS
+                        SIMPLE-ASCII
+                        NESTED-NATURAL-LISTS],
+        finite-types   [BOOLEANS
+                        (new EnumerationDataType "gary")]]
+    (testing "pairs of types"
+      (doseq [t1 infinite-types, t2 finite-types]
+        (test-a-type (cartesian-product-type t1 t2))
+        (test-a-type (cartesian-product-type t2 t1))))
+    (testing "triples of types"
+      (doseq [t1 infinite-types, t2 finite-types, t3 infinite-types]
+        (test-a-type (cartesian-product-type t1 t2 t3))
+        (test-a-type (cartesian-product-type t1 t3 t2))
+        (test-a-type (cartesian-product-type t2 t3 t1))
+        (test-a-type (cartesian-product-type t3 t2 t1))))))
