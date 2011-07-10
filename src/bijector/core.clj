@@ -196,6 +196,11 @@
     :else
       (infinite-union-type (constantly t1) (constantly t2))))
 
+(defn cartesian-product-type
+  [t1 t2]
+  (let [card (if (or (infinite? t1) (infinite? t2)) :infinity (* (cardinality t1) (cardinality t2)))])
+  (new DataType))
+
 (defn strings-with-chars
   [chars]
   (let [char-lists (lists-of (new EnumerationDataType chars)),
