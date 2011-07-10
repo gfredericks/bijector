@@ -23,7 +23,6 @@
           (memoize (fn [c] (inc (.indexOf simple-ascii-chars (str c)))))]
     (wrap-type raw-type
       (fn [[first-char-index first-char-count pairs]]
-        #_(prn (list 'from-t [first-char-index first-char-count pairs]))
         (apply str
           (flatten
             (list
@@ -38,12 +37,9 @@
                   ["" first-char-index]
                   pairs))))))
       (fn [s]
-        #_(prn (list 'to-t s))
         (loop [last-index nil, pairs [], s s]
-          #_(prn (list 'loop last-index pairs s))
           (if (empty? s)
-            (let [r (concat (first pairs) [(rest pairs)])]
-              #_(prn "RETURNING" r) r)
+            (concat (first pairs) [(rest pairs)])
             (let [[same diff] (split-with #{(first s)} s),
                   this-index (from-char (first s)),
                   adj-index (if (and last-index (> this-index last-index))

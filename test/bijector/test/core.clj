@@ -33,6 +33,18 @@
   (test-a-type NESTED-NATURAL-LISTS)
   (type-has-elements NESTED-NATURAL-LISTS [] [[[]]] [[2 3 [4]] 5 6 []] (range 1 20)))
 
+(deftest natural-sets-test
+  (test-a-type NATURAL-SETS)
+  (type-has-elements NATURAL-SETS #{} #{1 2} #{1 2 3 4} #{8382497} #{4839294 1}))
+
+(deftest sets-of-test
+  (doseq [t [SIMPLE-ASCII INTEGERS NATURALS NESTED-NATURAL-LISTS]]
+    (test-a-type (sets-of t))
+    (type-has-elements (sets-of t)
+      #{}
+      #{(to t 2) (to t 4823)}
+      #{(to t 928442) (to t 392472742948234)})))
+
 (deftest lists-of-test
   (type-has-elements
     (lists-of INTEGERS)
@@ -77,10 +89,10 @@
                         INTEGERS]]
     (testing "pairs of types"
       (doseq [t1 infinite-types, t2 infinite-types]
-        (test-a-type (infinite-cartesian-product-type t1 t2))))
+        (test-a-type (infinite-cartesian-product-type t1 t2) (range 1 100))))
     (testing "triples of types"
       (doseq [t1 infinite-types, t2 infinite-types, t3 infinite-types]
-        (test-a-type (infinite-cartesian-product-type t1 t2 t3))))))
+        (test-a-type (infinite-cartesian-product-type t1 t2 t3) (range 1 100))))))
 
 (deftest cartesian-product-type-test
   (let [infinite-types [NATURALS
@@ -90,11 +102,11 @@
                         (new EnumerationDataType "gary")]]
     (testing "pairs of types"
       (doseq [t1 infinite-types, t2 finite-types]
-        (test-a-type (cartesian-product-type t1 t2))
-        (test-a-type (cartesian-product-type t2 t1))))
+        (test-a-type (cartesian-product-type t1 t2) (range 1 100))
+        (test-a-type (cartesian-product-type t2 t1) (range 1 100))))
     (testing "triples of types"
       (doseq [t1 infinite-types, t2 finite-types, t3 infinite-types]
-        (test-a-type (cartesian-product-type t1 t2 t3))
-        (test-a-type (cartesian-product-type t1 t3 t2))
-        (test-a-type (cartesian-product-type t2 t3 t1))
-        (test-a-type (cartesian-product-type t3 t2 t1))))))
+        (test-a-type (cartesian-product-type t1 t2 t3) (range 1 100))
+        (test-a-type (cartesian-product-type t1 t3 t2) (range 1 100))
+        (test-a-type (cartesian-product-type t2 t3 t1) (range 1 100))
+        (test-a-type (cartesian-product-type t3 t2 t1) (range 1 100))))))

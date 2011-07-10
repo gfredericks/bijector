@@ -47,6 +47,18 @@
   (element? [_ x]
     (contains? (set elements) x)))
 
+(defn wrap-type
+  "Helper function for wrapping a type in transformation functions.
+  Creates a type of the same size as t, where the function from-t
+  transforms an instance of type t to an instance of the wrapped type,
+  and to-t transforms and instance of the wrapped type to type t."
+  [t from-t to-t recognizer]
+  (new DataType
+    (constantly (cardinality t))
+    (comp from-t (partial to t))
+    (comp (partial from t) to-t)
+    recognizer))
+
 (def BOOLEANS (new EnumerationDataType [true false]))
 
 (def NATURALS
@@ -147,12 +159,25 @@
           (sequential? coll)
           (every? #(element? NATURALS %) coll))))))
 
-#_(defn tuples-of
-  "Like lists-of, but for lists of a fixed size."
-  [t size]
-  (if (finite? t)
-    (new DataType)))
+(def NATURAL-SETS
+  (wrap-type
+    NATURAL-LISTS
+    (fn [n-list]
+      (set
+        (map + n-list (reductions + 0 n-list))))
+    (fn [n-set]
+      (let [in-order (sort n-set)]
+        (map - in-order (cons 0 in-order))))
+    (fn [coll] (and (set? coll) (every? natural? coll)))))
 
+(defn sets-of
+  [t]
+  {:pre [(infinite? t)]}
+  (wrap-type
+    NATURAL-SETS
+    (fn [set-of-n] (set (map #(to t %) set-of-n)))
+    (fn [set-of-t] (set (map #(from t %) set-of-t)))
+    (fn [coll] (and (set? coll) (every? #(element? t %) coll)))))
 
 (defn finite-union-type
   "Arguments should be constant functions returning the type.
@@ -198,18 +223,6 @@
       (union-type t2 t1)
     :else
       (infinite-union-type (constantly t1) (constantly t2))))
-
-(defn wrap-type
-  "Helper function for wrapping a type in transformation functions.
-  Creates a type of the same size as t, where the function from-t
-  transforms an instance of type t to an instance of the wrapped type,
-  and to-t transforms and instance of the wrapped type to type t."
-  [t from-t to-t recognizer]
-  (new DataType
-    (constantly (cardinality t))
-    (comp from-t (partial to t))
-    (comp (partial from t) to-t)
-    recognizer))
 
 (defn binary-partitions-type
   [partitions]
