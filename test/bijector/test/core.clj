@@ -92,3 +92,15 @@
               (new EnumerationDataType (map str "ABCDEF")))]
       (is (= (cardinality t) 12))
       (type-has-elements t [true "C"] [false "D"] [true "A"] [true "F"]))))
+
+(deftest infinite-cartesian-product-type-test
+  (let [infinite-types [NATURALS
+                        SIMPLE-ASCII
+                        NESTED-NATURAL-LISTS
+                        INTEGERS]]
+    (testing "pairs of types"
+      (for [t1 infinite-types, t2 infinite-types]
+        (test-a-type (infinite-cartesian-product-type t1 t2))))
+    (testing "triples of types"
+      (for [t1 infinite-types, t2 infinite-types, t3 infinite-types]
+        (test-a-type (infinite-cartesian-product-type t1 t2 t3))))))

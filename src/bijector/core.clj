@@ -9,6 +9,7 @@
 
 (defn infinite? [t] (= :infinity (cardinality t)))
 (def finite? (complement infinite?))
+(def natural? #(and (integer? %) (pos? %)))
 
 (defn make-converters-between
   [t1 t2]
@@ -197,6 +198,18 @@
     :else
       (infinite-union-type (constantly t1) (constantly t2))))
 
+(defn wrap-type
+  "Helper function for wrapping a type in transformation functions.
+  Creates a type of the same size as t, where the function from-t
+  transforms an instance of type t to an instance of the wrapped type,
+  and to-t transforms and instance of the wrapped type to type t."
+  [t from-t to-t recognizer]
+  (new DataType
+    (constantly (cardinality t))
+    (comp from-t (partial to t))
+    (comp (partial from t) to-t)
+    recognizer))
+
 (defn binary-partitions-type
   [partitions]
   (new InfiniteDataType
@@ -206,6 +219,17 @@
       (and
         (= partitions (count coll))
         (every? #(re-matches #"[01]*" %) coll)))))
+
+(defn natural-tuples-type
+  [length]
+  (wrap-type
+    (binary-partitions-type length)
+    (fn [ss]
+      (for [s ss] (new BigInteger (str "1" s) 2)))
+    (fn [ns]
+      (for [n ns] (.substring (.toString (bigint n) 2) 1)))
+    (fn [coll]
+      (and (= length (count coll)) (every? natural? coll)))))
 
 (defn finite-cartesian-product-type
   [& ts]
@@ -238,6 +262,22 @@
         (fn [coll]
           (and (= (count coll) (count ts))
                (every? (fn [v t] (element? t v)) (map vector coll ts))))))))
+
+(defn infinite-cartesian-product-type
+  [& ts]
+  {:pre [(not (empty? ts))
+         (every? infinite? ts)]}
+  (if (= 1 (count ts))
+    (first ts)
+    (wrap-type
+      (natural-tuples-type (count ts))
+      (fn [ns]
+        (for [[n t] (map vector ns ts)] (to t n)))
+      (fn [coll]
+        (for [[x t] (map vector coll ts)] (from t x)))
+      (fn [coll]
+        (and (= (count coll) (count ts))
+             (every? (fn [v t] (element? t v)) (map vector coll ts)))))))
 
 #_(defn cartesian-product-type
   [& ts]
