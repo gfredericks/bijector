@@ -339,6 +339,29 @@
               (and (= (count coll) (count ts))
                    (every? (fn [v t] (element? t v)) (map vector coll ts)))))))))
       
+(defn tuples-of
+  [size t]
+  (apply cartesian-product-type (repeat size t)))
+
+(def pairs-of (partial tuples-of 2))
+
+(defn without
+  "Returns a new type without the specified elements."
+  [t & elements]
+  (let [indices (sort (map #(from t %) elements)),
+        el-set (set elements)]
+    (new DataType
+      (constantly (if (finite? t) (- (cardinality t) (count elements)) :infinity))
+      (fn [n]
+        (to t
+          (loop [indices indices, n n]
+            (if (or (empty? indices) (< n (first indices)))
+              n
+              (recur (rest indices) (inc n))))))
+      (fn [x]
+        (let [n (from t x)]
+          (- n (count (take-while #(< % n) indices)))))
+      (fn [x] (and (element? t x) (not (el-set x)))))))
 
 (defn strings-with-chars
   [chars]

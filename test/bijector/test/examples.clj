@@ -8,3 +8,6 @@
                  NATURALS
                  (lists-of (cartesian-product-type (finite-nats (dec (count simple-ascii-chars))) NATURALS))))
   (test-a-type ASCII-WITH-REPETITIONS (range 1 500)))
+
+(deftest json-maps-test
+  (test-a-type (json-maps INTEGERS)))
