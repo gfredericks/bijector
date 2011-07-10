@@ -64,3 +64,15 @@
     [-1 -2 -1]
     [500007]
     (range 20)))
+
+(deftest binary-partitions-type-test
+  (doseq [parts (range 2 10)]
+    (testing (str "Binary partitions of order " parts)
+      (let [t (binary-partitions-type parts)]
+        (test-a-type t)
+        (type-has-elements t
+          (repeat parts "")
+          (repeat parts "0")
+          (repeat parts "0110")
+          (for [n (range 3898934 (+ 3898934 parts))]
+            (.toString (bigint n) 2)))))))

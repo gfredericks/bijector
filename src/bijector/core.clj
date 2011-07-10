@@ -1,4 +1,5 @@
-(ns bijector.core)
+(ns bijector.core
+  (:require [bijector.string-partitions :as parts]))
 
 (defprotocol IDataType
   (cardinality [this])
@@ -144,11 +145,11 @@
           (sequential? coll)
           (every? #(element? NATURALS %) coll))))))
 
-(defn tuples-of
+#_(defn tuples-of
   "Like lists-of, but for lists of a fixed size."
   [t size]
   (if (finite? t)
-    (new DataType))
+    (new DataType)))
 
 
 (defn finite-union-type
@@ -196,10 +197,22 @@
     :else
       (infinite-union-type (constantly t1) (constantly t2))))
 
-(defn cartesian-product-type
-  [t1 t2]
-  (let [card (if (or (infinite? t1) (infinite? t2)) :infinity (* (cardinality t1) (cardinality t2)))])
-  (new DataType))
+(defn binary-partitions-type
+  [partitions]
+  (new InfiniteDataType
+    (partial parts/n-to-binary-partition partitions)
+    (partial parts/binary-partition-to-n partitions)
+    (fn [coll]
+      (and
+        (= partitions (count coll))
+        (every? #(re-matches #"[01]*" %) coll)))))
+
+#_(defn cartesian-product-type
+  [& ts]
+  (let [card (if (some infinite? ts) :infinity (reduce * (map cardinality ts)))]
+    (new DataType
+      (constantly card)
+      (fn [n]))))
 
 (defn strings-with-chars
   [chars]
