@@ -1,32 +1,8 @@
 (ns bijector.test.core
   (:use [bijector.core])
   (:import (bijector.core EnumerationDataType))
-  (:use [clojure.test]))
-
-(defn- **
-  [a b]
-  (apply * (repeat b a)))
-
-(def nz
-  (concat
-    (range 1 101)
-    (for [n (range 1 51)] (* 1000 n))
-    (for [n (range 1 51)] (** 578 n))))
-
-(defn- test-a-type
-  [t]
-  (doseq [n nz]
-    (testing (str "with index " n)
-      (is (= n (->> n (to t) (from t)))))))
-
-(defn- type-has-elements
-  [t & els]
-  (doseq [el els]
-    (testing (pr-str el)
-      (let [n (from t el)]
-        (is (integer? n))
-        (is (pos? n))
-        (is (= el (to t n)))))))
+  (:use [clojure.test]
+        bijector.test.helpers))
 
 (deftest basic-types-test
   (doseq [t [NATURALS

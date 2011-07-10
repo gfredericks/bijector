@@ -336,9 +336,11 @@
       (partial from char-lists)
       (fn [s] (and (string? s) (every? #(contains? char-set %) s))))))
 
-(def SIMPLE-ASCII
-  (strings-with-chars
-    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r"))
+(def simple-ascii-chars
+  " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r")
+
+(def SIMPLE-ASCII (strings-with-chars simple-ascii-chars))
+    
 
 ; Idea: this doesn't seem to be a very even definition,
 ;       for example note the superexponential growth of
