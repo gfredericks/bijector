@@ -13,10 +13,11 @@
     (for [n (range 1 51)] (** 578 n))))
 
 (defn test-a-type
-  [t]
-  (doseq [n nz]
-    (testing (str "with index " n)
-      (is (= n (->> n (to t) (from t)))))))
+  ([t] (test-a-type t nz))
+  ([t nz]
+    (doseq [n nz]
+      (testing (str "with index " n)
+        (is (= n (->> n (to t) (from t))))))))
 
 (defn type-has-elements
   [t & els]
