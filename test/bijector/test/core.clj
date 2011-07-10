@@ -76,3 +76,19 @@
           (repeat parts "0110")
           (for [n (range 3898934 (+ 3898934 parts))]
             (.toString (bigint n) 2)))))))
+
+(deftest finite-cartesian-product-test
+  (testing "fixed-length boolean lists"
+    (let [t (apply finite-cartesian-product-type (repeat 5 BOOLEANS))]
+      (type-has-elements t
+        [true true true true true]
+        [false false false false false]
+        [true false true false true]
+        [true true false true true])
+      (is (= 32 (cardinality t)))))
+  (testing "ascii-boolean pairs"
+    (let [t (finite-cartesian-product-type
+              BOOLEANS
+              (new EnumerationDataType (map str "ABCDEF")))]
+      (is (= (cardinality t) 12))
+      (type-has-elements t [true "C"] [false "D"] [true "A"] [true "F"]))))

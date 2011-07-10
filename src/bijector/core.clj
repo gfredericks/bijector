@@ -207,6 +207,38 @@
         (= partitions (count coll))
         (every? #(re-matches #"[01]*" %) coll)))))
 
+(defn finite-cartesian-product-type
+  [& ts]
+  {:pre [(not (empty? ts))
+         (every? finite? ts)]}
+  (if (= 1 (count ts))
+    (first ts)
+    (let [c (apply * (map cardinality ts))]
+      (new DataType
+        (constantly c)
+        (fn [n]
+          (first
+            (reduce
+              (fn [[so-far n] t]
+                (let [c (cardinality t)]
+                  [(conj so-far (to t (inc (rem n c))))
+                   (quot n c)]))
+              [[] (dec n)]
+              ts)))
+        (fn [coll]
+          (inc
+            (second
+              (reduce
+                (fn [[multiple n] [v t]]
+                  (let [c (cardinality t)]
+                    [(* multiple c)
+                     (+ n (* multiple (dec (from t v))))]))
+                [1 0]
+                (map vector coll ts)))))
+        (fn [coll]
+          (and (= (count coll) (count ts))
+               (every? (fn [v t] (element? t v)) (map vector coll ts))))))))
+
 #_(defn cartesian-product-type
   [& ts]
   (let [card (if (some infinite? ts) :infinity (reduce * (map cardinality ts)))]
