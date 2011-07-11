@@ -17,9 +17,9 @@
   [(comp (partial to t2) (partial from t1))
    (comp (partial to t1) (partial from t2))])
 
-(defrecord DataType [s t f e]
+(defrecord DataType [card t f e]
   IDataType
-  (cardinality [_] (s))
+  (cardinality [_] card)
   (to [_ n] (t n))
   (from [_ x] (f x))
   (element? [_ x] (e x)))
@@ -54,7 +54,7 @@
   and to-t transforms and instance of the wrapped type to type t."
   [t from-t to-t recognizer]
   (new DataType
-    (constantly (cardinality t))
+    (cardinality t)
     (comp from-t (partial to t))
     (comp (partial from t) to-t)
     recognizer))
@@ -180,49 +180,46 @@
     (fn [coll] (and (set? coll) (every? #(element? t %) coll)))))
 
 (defn finite-union-type
-  "Arguments should be constant functions returning the type.
-  This delayed evaluation allows recursive types."
-  [ft1 ft2]
-  (let [c1 (delay (cardinality (ft1))),
-        c2 (delay (cardinality (ft2))),
-        c3 (delay (if (= :infinity c2) c2 (+ c1 c2))),
-        t1 (delay (ft1)),
-        t2 (delay (ft2))]
+  [t1 t2]
+  (let [c1 (cardinality t1),
+        c2 (cardinality t2),
+        c3 (if (= :infinity c2) c2 (+ c1 c2))]
     (new DataType
-      (partial deref c3)
-      (fn [n] (if (> n @c1) (to @t2 (- n @c1)) (to @t1 n)))
+      c3
+      (fn [n] (if (> n c1) (to t2 (- n c1)) (to t1 n)))
       (fn [x]
-        (if (element? @t1 x)
-          (from @t1 x)
-          (+ @c1 (from @t2 x))))
-      (fn [x] (or (element? @t1 x) (element? @t2 x))))))
+        (if (element? t1 x)
+          (from t1 x)
+          (+ c1 (from t2 x))))
+      (fn [x] (or (element? t1 x) (element? t2 x))))))
 
 (defn infinite-union-type
   "Arguments should be constant functions returning the type.
   This delayed evaluation allows recursive types."
-  [ft1 ft2]
-  (let [t1 (delay (ft1)),
-        t2 (delay (ft2))]
-    (new InfiniteDataType
-      (fn [n]
-        (if (odd? n)
-          (to @t1 (/ (inc n) 2))
-          (to @t2 (/ n 2))))
-      (fn [x]
-        (if (element? @t1 x)
-          (dec (* 2 (from @t1 x)))
-          (* 2 (from @t2 x))))
-      (fn [x] (or (element? @t1 x) (element? @t2 x))))))
-
-(defn union-type
   [t1 t2]
-  (cond
-    (finite? t1)
-      (finite-union-type (constantly t1) (constantly t2))
-    (finite? t2)
-      (union-type t2 t1)
-    :else
-      (infinite-union-type (constantly t1) (constantly t2))))
+  (new InfiniteDataType
+    (fn [n]
+      (if (odd? n)
+        (to t1 (/ (inc n) 2))
+        (to t2 (/ n 2))))
+    (fn [x]
+      (if (element? t1 x)
+        (dec (* 2 (from t1 x)))
+        (* 2 (from t2 x))))
+    (fn [x] (or (element? t1 x) (element? t2 x)))))
+
+; TODO: This function should be rewritten for varargs -- the reduction
+;       here is not efficient.
+(defn union-type
+  ([t1 t2 & ts] (reduce union-type (cons t1 (cons t2 ts))))
+  ([t1 t2]
+    (cond
+      (finite? t1)
+        (finite-union-type t1 t2)
+      (finite? t2)
+        (union-type t2 t1)
+      :else
+        (infinite-union-type t1 t2))))
 
 (defn binary-partitions-type
   [partitions]
@@ -257,7 +254,7 @@
       #(and (= 1 (count %)) (element? (first ts) (first %))))
     (let [c (apply * (map cardinality ts))]
       (new DataType
-        (constantly c)
+        c
         (fn [n]
           (first
             (reduce
@@ -351,7 +348,7 @@
   (let [indices (sort (map #(from t %) elements)),
         el-set (set elements)]
     (new DataType
-      (constantly (if (finite? t) (- (cardinality t) (count elements)) :infinity))
+      (if (finite? t) (- (cardinality t) (count elements)) :infinity)
       (fn [n]
         (to t
           (loop [indices indices, n n]
@@ -377,6 +374,16 @@
 
 (def SIMPLE-ASCII (strings-with-chars simple-ascii-chars))
     
+(defn stub-type
+  "Takes a function that returns an infinite type, and returns a stub type that
+  will call that function once the first time it is needed. This allows
+  recursive types."
+  [f]
+  (let [t (delay (f))]
+    (new InfiniteDataType
+      (fn [n] (to @t n))
+      (fn [x] (from @t x))
+      (fn [x] (element? @t x)))))
 
 ; Idea: this doesn't seem to be a very even definition,
 ;       for example note the superexponential growth of
@@ -388,5 +395,5 @@
 (def NESTED-NATURAL-LISTS
   (lists-of
     (infinite-union-type
-      (constantly NATURALS)
-      (fn [] NESTED-NATURAL-LISTS))))
+      NATURALS
+      (stub-type (fn [] NESTED-NATURAL-LISTS)))))

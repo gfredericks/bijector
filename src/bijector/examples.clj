@@ -5,7 +5,7 @@
 (defn finite-nats
   [max-value]
   (new DataType
-    (constantly max-value)
+    max-value
     identity
     identity
     #(and (natural? %) (<= % max-value))))
@@ -71,3 +71,20 @@
 (defn json-maps
   [value-t]
   (union-type (new EnumerationDataType [{}]) (nonempty-json-maps value-t)))
+
+(declare SIMPLE-JSON)
+
+(def simple-json-stub
+  (stub-type (fn [] SIMPLE-JSON)))
+
+(def lists-of-simple-json (lists-of simple-json-stub))
+
+(def maps-of-simple-json (json-maps simple-json-stub))
+
+(def SIMPLE-JSON
+  (union-type
+    (new EnumerationDataType [true false nil])
+    INTEGERS
+    SIMPLE-ASCII
+    lists-of-simple-json
+    maps-of-simple-json))
