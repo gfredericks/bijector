@@ -145,3 +145,6 @@
 (def RATIONALS
   (let [neg-rats (wrap-type POSITIVE-RATIONALS - - (comp (partial element? POSITIVE-RATIONALS) -))]
     (union-type POSITIVE-RATIONALS neg-rats (numeric-singleton-type (ratio 0)))))
+
+(def HEX-STRINGS
+  (strings-with-chars "0123456789abcdef"))
