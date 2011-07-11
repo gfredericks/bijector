@@ -94,3 +94,51 @@
     SIMPLE-ASCII
     vectors-of-simple-json
     maps-of-simple-json))
+
+(defn ratio
+  ([a b] (new clojure.lang.Ratio (bigint a) (bigint b)))
+  ([x]
+    (cond (ratio? x) x (integer? x) (new clojure.lang.Ratio (bigint x) (bigint 1)))))
+
+(def POSITIVE-RATIONALS
+  (let [raw-type (cartesian-product-type BOOLEANS (without NATURAL-LISTS [])),
+        ONE (ratio 1),
+        move-right (fn [q steps]
+                     (let [a (numerator q), b (denominator q)]
+                       (ratio (+ a (* steps b)) b))),
+        move-left (fn [q steps]
+                    (let [a (numerator q), b (denominator q)]
+                      (ratio a (+ b (* steps a)))))]
+    (wrap-type (with raw-type :one)
+      (fn [x]
+        (if (= :one x)
+          ONE
+          (let [[left-first step-seq] x]
+            (first
+              (reduce
+                (fn [[q left] steps]
+                  [((if left move-left move-right) q steps) (not left)])
+                [ONE left-first]
+                step-seq)))))
+      (fn [q]
+        (if (= q 1)
+          :one
+          (inc
+            (let [q (ratio q)]
+              (loop [a (numerator q), b (denominator q), step-seq ()]
+                (cond
+                  (= 1 a)
+                    [true (cons (dec b) step-seq)]
+                  (= 1 b)
+                    [false (cons (dec a) step-seq)]
+                  (> a b)
+                    (recur (mod a b) b (cons (quot a b) step-seq))
+                  (< a b)
+                    (recur a (mod b a) (cons (quot b a) step-seq))))))))
+      (fn [q] (and (or (ratio? q) (integer? q)) (> q 0))))))
+
+(def RATIONALS
+  (let [neg-rats (wrap-type POSITIVE-RATIONALS - - (comp (partial element? POSITIVE-RATIONALS) -))]
+    (with
+      (union-type POSITIVE-RATIONALS neg-rats)
+      (ratio 0))))

@@ -20,3 +20,8 @@
     nil
     {"wut" "bagger"}
     [[[{"hey" [1 2 3]} false true [nil nil nil]]]]))
+
+(deftest rationals-test
+  (test-a-type POSITIVE-RATIONALS)
+  (test-a-type RATIONALS)
+  (type-has-elements RATIONALS 0 -1 -1/2 3 3/4 -7/6))

@@ -362,6 +362,11 @@
           (- n (count (take-while #(< % n) indices)))))
       (fn [x] (and (element? t x) (not (el-set x)))))))
 
+(defn with
+  "Returns a new type with the listed elements added."
+  [t & elements]
+  (union-type t (new EnumerationDataType elements)))
+
 (defn strings-with-chars
   [chars]
   (let [char-lists (lists-of (new EnumerationDataType chars)),
