@@ -65,7 +65,7 @@
   (new InfiniteDataType
     identity
     identity
-    #(and (integer? %) (pos? %))))
+    natural?))
 
 (def INTEGERS
   (new InfiniteDataType
@@ -243,6 +243,8 @@
       (and (= length (count coll)) (every? natural? coll)))))
 
 (defn sequence-has-types?
+  "Checks that the given sequence is the same length as the given type-sequence,
+  and that each member of the sequence is an element of its corresponding type."
   [ts coll]
   (and
     (= (count ts) (count coll))
