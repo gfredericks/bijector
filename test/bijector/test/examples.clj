@@ -11,3 +11,12 @@
 
 (deftest json-maps-test
   (test-a-type (json-maps INTEGERS)))
+
+(deftest simple-json-test
+  (test-a-type SIMPLE-JSON)
+  (type-has-elements SIMPLE-JSON
+    false
+    true
+    nil
+    {"wut" "bagger"}
+    [[[{"hey" [1 2 3]} false true [nil nil nil]]]]))

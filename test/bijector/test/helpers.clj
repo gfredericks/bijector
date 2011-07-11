@@ -17,12 +17,15 @@
   ([t nz]
     (doseq [n nz]
       (testing (str "with index " n)
-        (is (= n (->> n (to t) (from t))))))))
+        (let [v (to t n)]
+          (is (= n (from t v)))
+          (is (element? t v)))))))
 
 (defn type-has-elements
   [t & els]
   (doseq [el els]
     (testing (pr-str el)
+      (is (element? t el))
       (let [n (from t el)]
         (is (integer? n))
         (is (pos? n))

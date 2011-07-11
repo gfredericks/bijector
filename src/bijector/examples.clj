@@ -66,7 +66,7 @@
               right-n (from (val-type (count m)) (map val (sort-by key m)))]
           [left-n right-n]))
       (fn [m]
-        (and (map? m) (every? #(and (string? (key %)) (element? value-t (val %)))))))))
+        (and (map? m) (every? #(and (string? (key %)) (element? value-t (val %))) m))))))
 
 (defn json-maps
   [value-t]
@@ -79,6 +79,12 @@
 
 (def lists-of-simple-json (lists-of simple-json-stub))
 
+(def vectors-of-simple-json
+  (wrap-type lists-of-simple-json
+    vec
+    identity
+    #(and (vector? %) (element? lists-of-simple-json %))))
+
 (def maps-of-simple-json (json-maps simple-json-stub))
 
 (def SIMPLE-JSON
@@ -86,5 +92,5 @@
     (new EnumerationDataType [true false nil])
     INTEGERS
     SIMPLE-ASCII
-    lists-of-simple-json
+    vectors-of-simple-json
     maps-of-simple-json))

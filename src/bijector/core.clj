@@ -242,6 +242,12 @@
     (fn [coll]
       (and (= length (count coll)) (every? natural? coll)))))
 
+(defn sequence-has-types?
+  [ts coll]
+  (and
+    (= (count ts) (count coll))
+    (every? (fn [[x t]] (element? t x)) (map vector coll ts))))
+
 (defn finite-cartesian-product-type
   [& ts]
   {:pre [(not (empty? ts))
@@ -274,9 +280,7 @@
                      (+ n (* multiple (dec (from t v))))]))
                 [1 0]
                 (map vector coll ts)))))
-        (fn [coll]
-          (and (= (count coll) (count ts))
-               (every? (fn [v t] (element? t v)) (map vector coll ts))))))))
+        (partial sequence-has-types? ts)))))
 
 (defn infinite-cartesian-product-type
   [& ts]
@@ -294,9 +298,7 @@
         (for [[n t] (map vector ns ts)] (to t n)))
       (fn [coll]
         (for [[x t] (map vector coll ts)] (from t x)))
-      (fn [coll]
-        (and (= (count coll) (count ts))
-             (every? (fn [v t] (element? t v)) (map vector coll ts)))))))
+      (partial sequence-has-types? ts))))
 
 (defn cartesian-product-type
   [& ts]
@@ -332,9 +334,7 @@
                     finite-n (from finite-product (map first finites)),
                     infinite-n (from infinite-product (map first infinites))]
                 (inc (+ (dec finite-n) (* (dec infinite-n) finite-card)))))
-            (fn [coll]
-              (and (= (count coll) (count ts))
-                   (every? (fn [v t] (element? t v)) (map vector coll ts)))))))))
+            (partial sequence-has-types? ts))))))
       
 (defn tuples-of
   [size t]
