@@ -1,4 +1,5 @@
 (ns bijector.examples
+  (:require [clojure.string :as string])
   (:import (bijector.core DataType InfiniteDataType EnumerationDataType))
   (:use bijector.core))
 
@@ -94,6 +95,14 @@
     SIMPLE-ASCII
     vectors-of-simple-json
     maps-of-simple-json))
+
+(def NOUNS (new EnumerationDataType (string/split "box dog cat desk chair banana" #" ")))
+(def VERBS (new EnumerationDataType (string/split "eats kicks scratches bothers" #" ")))
+
+#_(def NOUN-PHRASE
+  (union-type
+    NOUNS
+    ))
 
 (defn ratio
   ([a b] (new clojure.lang.Ratio (bigint a) (bigint b)))
