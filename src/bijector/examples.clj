@@ -148,3 +148,32 @@
 
 (def HEX-STRINGS
   (strings-with-chars "0123456789abcdef"))
+
+(defn natural-permutations
+  "Returns a finite type of all the permutations of the numbers from 0 to n-1"
+  [n]
+  (let [card (apply * (range 1 (inc n)))]
+    (new DataType
+      card
+      (fn [nn]
+        (loop [modulus n, i (dec nn), res (), nums (apply sorted-set (range n))]
+          (if (empty? nums)
+            res
+            (let [[a b] ((juxt quot rem) i modulus),
+                  x (nth (seq nums) b)]
+              (recur
+                (dec modulus)
+                a
+                (conj res x)
+                (disj nums x))))))
+      (fn [p]
+        (inc
+          (first
+            (reduce
+              (fn [[i nums] pi]
+                (let [choice (count (take-while #(< % pi) nums))]
+                  [(+ choice (* i (inc (count nums)))) (conj nums pi)]))
+              [0 (sorted-set)]
+              p))))
+      (fn [p]
+        (and (coll? p) (= n (count p)) (= (set p) (set (range n))))))))

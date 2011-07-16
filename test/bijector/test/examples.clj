@@ -25,3 +25,11 @@
   (test-a-type POSITIVE-RATIONALS)
   (test-a-type RATIONALS)
   (type-has-elements RATIONALS 0 -1 -1/2 3 3/4 -7/6))
+
+(deftest permutations-test
+  (let [t (natural-permutations 3)]
+    (type-has-elements t [0 1 2] [2 1 0] [1 2 0] [0 2 1] [1 0 2] [2 0 1]))
+  (doseq [n [4 5 6]]
+    (let [t (natural-permutations n),
+          fact (apply * (range 1 (inc n)))]
+      (test-a-type t (range 1 (inc fact))))))
