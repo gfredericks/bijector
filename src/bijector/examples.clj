@@ -177,3 +177,36 @@
               p))))
       (fn [p]
         (and (coll? p) (= n (count p)) (= (set p) (set (range n))))))))
+
+(defn non-repeating-natural-lists
+  "Returns a type of lists of natural numbers from 1 to n such that
+  no consecutive numbers are the same."
+  [n]
+  (let [raw-type (cartesian-product-type
+                   (finite-nats n)
+                   (lists-of (finite-nats (dec n))))]
+    (with
+      (wrap-type raw-type
+        (fn [[init others]]
+          (reduce
+            (fn [so-far next-num]
+              (conj so-far
+                (if (>= next-num (last so-far)) (inc next-num) next-num)))
+            [init]
+            others))
+        (fn [[init & others]]
+          (list
+            init
+            (last
+              (reduce
+                (fn [[last-value new-list] el]
+                  (let [v (if (> el last-value) (dec el) el)]
+                    (vector v (conj new-list v))))
+                    
+                [init []]
+                others))))
+        (fn [coll]
+          (and
+            (every? #(and (natural? %) (<= % n)) coll)
+            (every? #(not= (first %) (second %)) (partition 2 1 coll)))))
+      [])))

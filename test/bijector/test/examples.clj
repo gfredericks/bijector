@@ -33,3 +33,7 @@
     (let [t (natural-permutations n),
           fact (apply * (range 1 (inc n)))]
       (test-a-type t (range 1 (inc fact))))))
+
+(deftest non-repeating-natural-lists-test
+  (let [t (non-repeating-natural-lists 5)]
+    (test-a-type t)))
