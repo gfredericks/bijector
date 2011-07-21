@@ -37,3 +37,9 @@
 (deftest non-repeating-natural-lists-test
   (let [t (non-repeating-natural-lists 5)]
     (test-a-type t)))
+
+(deftest min-length-lists-of-test
+  (test-a-type (min-length-lists-of NATURALS 5)))
+
+(deftest money-csv-test
+  (test-a-type (money-csv 5 10 20 50 5000)))

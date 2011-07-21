@@ -1,4 +1,5 @@
 (ns bijector.examples
+  (:require [clojure.string :as string])
   (:import (bijector.core DataType InfiniteDataType EnumerationDataType))
   (:use bijector.core))
 
@@ -210,3 +211,64 @@
             (every? #(and (natural? %) (<= % n)) coll)
             (every? #(not= (first %) (second %)) (partition 2 1 coll)))))
       [])))
+
+
+;;
+;; Money-CSV
+;;
+
+(defn- natural-range-type
+  [min max]
+  {:pre [(< min max)]}
+  (wrap-type (finite-nats (inc (- max min)))
+    (fn [finite-nat] (dec (+ finite-nat min)))
+    (fn [n] (inc (- n min)))
+    (fn [n] (and (integer? n) (<= min n max)))))
+
+(defn- csv-row-type
+  [cols min-cents max-cents]
+  (let [t (natural-range-type min-cents max-cents)]
+    (apply cartesian-product-type (repeat cols t))))
+
+(defn min-length-lists-of
+  [t length]
+  (let [lot (lists-of t)]
+    (wrap-type (cartesian-product-type (tuples-of length t) lot)
+      (partial apply concat)
+      (partial split-at length)
+      (fn [coll] (and (element? lot coll) (>= (count coll) length))))))
+
+(defn- fixed-width-money-csv
+  [cols min-rows min-cents max-cents]
+  (let [row-type (csv-row-type cols min-cents max-cents)]
+    (min-length-lists-of row-type min-rows)))
+
+(defn money-csv-raw
+  "Returns a type that enumerates all CSV files of filled rectangular
+   shape of money-looking values, i.e. numbers with two decimal places."
+  [min-cols max-cols min-rows min-cents max-cents]
+  (let [fixed-width-type (memoize #(fixed-width-money-csv % min-rows min-cents max-cents)),
+        col-count-type (natural-range-type min-cols max-cols)]
+    (wrap-type (cartesian-product-type col-count-type NATURALS)
+      (fn [[col-count n]] (to (fixed-width-type col-count) n))
+      (fn [rows]
+        (let [col-count (-> rows first count)]
+          [col-count (from (fixed-width-type col-count) rows)]))
+      (fn [rows]
+        (let [col-count (-> rows first count)]
+          (element? (fixed-width-type col-count) rows))))))
+
+(defn money-csv
+  [& args]
+  (let [int-to-decimal-string #(format "%.2f" (double (/ % 100))),
+        decimal-string-to-int #(int (Math/round (* 100 (new Double %))))]
+    (wrap-type (apply money-csv-raw args)
+      (fn [rows]
+        (string/join "\n"
+          (for [row rows]
+            (string/join "," (map int-to-decimal-string row)))))
+      (fn [s]
+        (let [row-strings (string/split s #"\n")]
+          (for [row-string row-strings]
+            (map decimal-string-to-int (string/split row-string #",")))))
+      (fn [s] true))))
