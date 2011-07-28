@@ -38,12 +38,17 @@
   (type-has-elements NATURAL-SETS #{} #{1 2} #{1 2 3 4} #{8382497} #{4839294 1}))
 
 (deftest sets-of-test
-  (doseq [t [SIMPLE-ASCII INTEGERS NATURALS NESTED-NATURAL-LISTS]]
-    (test-a-type (sets-of t))
-    (type-has-elements (sets-of t)
-      #{}
-      #{(to t 2) (to t 4823)}
-      #{(to t 928442) (to t 392472742948234)})))
+  (testing "Sets of infinite type"
+    (doseq [t [SIMPLE-ASCII INTEGERS NATURALS NESTED-NATURAL-LISTS]]
+      (test-a-type (sets-of t))
+      (type-has-elements (sets-of t)
+        #{}
+        #{(to t 2) (to t 4823)}
+        #{(to t 928442) (to t 392472742948234)})))
+  (testing "Sets of finite type"
+    (doseq [t [BOOLEANS (new EnumerationDataType simple-ascii-chars)]]
+      (test-a-type (lists-of (sets-of t))))
+    (type-has-elements (sets-of BOOLEANS) #{} #{true} #{false} #{true false})))
 
 (deftest lists-of-test
   (type-has-elements

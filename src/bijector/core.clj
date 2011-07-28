@@ -170,14 +170,37 @@
         (map - in-order (cons 0 in-order))))
     (fn [coll] (and (set? coll) (every? natural? coll)))))
 
-(defn sets-of
+(defn- sets-of-infinite-type
   [t]
-  {:pre [(infinite? t)]}
   (wrap-type
     NATURAL-SETS
     (fn [set-of-n] (set (map #(to t %) set-of-n)))
     (fn [set-of-t] (set (map #(from t %) set-of-t)))
     (fn [coll] (and (set? coll) (every? #(element? t %) coll)))))
+
+(defn- sets-of-finite-type
+  [t]
+  (let [tcard (cardinality t),
+        card (apply * (repeat tcard 2))]
+    (new DataType
+      card
+      (fn [n]
+        (set
+          (let [n (bigint (dec n))]
+            (for [x (range tcard), :when (.testBit n x)]
+              (to t (inc x))))))
+      (fn [obs]
+        (inc
+          (reduce
+            (fn [n ob]
+              (.setBit n (dec (from t ob))))
+            (bigint 0)
+            obs)))
+      (fn [obs] (and (set? obs) (every? #(element? t %) obs))))))
+
+(defn sets-of
+  [t]
+  ((if (finite? t) sets-of-finite-type sets-of-infinite-type) t))
 
 (defn finite-union-type
   [t1 t2]
