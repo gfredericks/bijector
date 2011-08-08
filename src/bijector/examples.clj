@@ -5,11 +5,7 @@
 
 (defn finite-nats
   [max-value]
-  (new DataType
-    max-value
-    identity
-    identity
-    #(and (natural? %) (<= % max-value))))
+  (integer-range-type 1 (inc max-value)))
 
 ; Careful converting large random numbers, as the strings could be
 ; exponentially long

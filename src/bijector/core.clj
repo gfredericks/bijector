@@ -75,6 +75,17 @@
       (cond (zero? x) 1, (neg? x) (inc (* 2 (- x))), (pos? x) (* 2 x)))
     integer?))
 
+(defn integer-range-type
+  "Takes one or two arguments, with same meaning as clojure.core/range"
+  ([end] (integer-range-type 0 end)) 
+  ([start end]
+    {:pre [(< start end)]}
+    (new DataType
+      (- end start)
+      (fn [n] (+ start (dec n)))
+      (fn [n] (inc (- n start)))
+      #(and (natural? %) (>= % start) (< % end)))))
+
 (declare NATURAL-LISTS)
 
 (defn lists-of
@@ -202,48 +213,6 @@
   [t]
   ((if (finite? t) sets-of-finite-type sets-of-infinite-type) t))
 
-(defn finite-union-type
-  [t1 t2]
-  (let [c1 (cardinality t1),
-        c2 (cardinality t2),
-        c3 (if (= :infinity c2) c2 (+ c1 c2))]
-    (new DataType
-      c3
-      (fn [n] (if (> n c1) (to t2 (- n c1)) (to t1 n)))
-      (fn [x]
-        (if (element? t1 x)
-          (from t1 x)
-          (+ c1 (from t2 x))))
-      (fn [x] (or (element? t1 x) (element? t2 x))))))
-
-(defn infinite-union-type
-  "Arguments should be constant functions returning the type.
-  This delayed evaluation allows recursive types."
-  [t1 t2]
-  (new InfiniteDataType
-    (fn [n]
-      (if (odd? n)
-        (to t1 (/ (inc n) 2))
-        (to t2 (/ n 2))))
-    (fn [x]
-      (if (element? t1 x)
-        (dec (* 2 (from t1 x)))
-        (* 2 (from t2 x))))
-    (fn [x] (or (element? t1 x) (element? t2 x)))))
-
-; TODO: This function should be rewritten for varargs -- the reduction
-;       here is not efficient.
-(defn union-type
-  ([t1 t2 & ts] (reduce union-type (cons t1 (cons t2 ts))))
-  ([t1 t2]
-    (cond
-      (finite? t1)
-        (finite-union-type t1 t2)
-      (finite? t2)
-        (union-type t2 t1)
-      :else
-        (infinite-union-type t1 t2))))
-
 (defn binary-partitions-type
   [partitions]
   (new InfiniteDataType
@@ -360,7 +329,62 @@
                     infinite-n (from infinite-product (map first infinites))]
                 (inc (+ (dec finite-n) (* (dec infinite-n) finite-card)))))
             (partial sequence-has-types? ts))))))
-      
+
+(defn finite-union-type
+  [t1 t2]
+  (let [c1 (cardinality t1),
+        c2 (cardinality t2),
+        c3 (if (= :infinity c2) c2 (+ c1 c2))]
+    (new DataType
+      c3
+      (fn [n] (if (> n c1) (to t2 (- n c1)) (to t1 n)))
+      (fn [x]
+        (if (element? t1 x)
+          (from t1 x)
+          (+ c1 (from t2 x))))
+      (fn [x] (or (element? t1 x) (element? t2 x))))))
+
+(defn infinite-union-type
+  [& ts]
+  (let [ts (vec ts)]
+    (wrap-type
+      (cartesian-product-type
+        (integer-range-type (count ts))
+        NATURALS)
+      (fn [[t-index n]] (to (nth ts t-index) n))
+      (fn [x]
+        (loop [t-index 0]
+          (if (element? (nth ts t-index) x)
+            [t-index (from (nth ts t-index) x)]
+            (recur (inc t-index)))))
+      (fn [x] (boolean (some #(element? % x) ts))))))
+
+(defn union-type
+  [& ts]
+  {:pre [(< 1 (count ts))]}
+  (let [[finites infinites] (separate finite? ts),
+        combine-finite-types
+          (fn combine-finite-types [ts]
+            (cond
+              (= 1 (count ts))
+                (first ts)
+              (= 2 (count ts))
+                (apply finite-union-type ts)
+              (< 2 (count ts))
+                (let [[ts1 ts2] (split-at (quot (count ts) 2) ts)]
+                  (finite-union-type
+                    (combine-finite-types ts1)
+                    (combine-finite-types ts2)))))]
+    (cond
+      (empty? finites)
+        (apply infinite-union-type infinites)
+      (empty? infinites)
+        (combine-finite-types finites)
+      :else
+        (finite-union-type
+          (combine-finite-types finites)
+          (apply infinite-union-type infinites)))))
+
 (defn tuples-of
   [size t]
   (apply cartesian-product-type (repeat size t)))
