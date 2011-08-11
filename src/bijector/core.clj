@@ -439,13 +439,69 @@
       (fn [x] (from @t x))
       (fn [x] (element? @t x)))))
 
-(let [catalan (fn [n] (apply * (for [k (range 2 (inc n))] (/ (+ n k) k))))]
-  (def EMPTY-LISTS
-    (new InfiniteType
-      (fn [n])
-      (fn [coll])
-      (fn f [coll]
-        (and (sequential? coll) (every? f coll))))))
+(let
+  [catalan
+     (memoize
+       (fn [n] (apply * (for [k (range 2 (inc n))] (/ (+ n k) k))))),
+   trees-of-order (comp catalan dec),
+   ! (memoize (fn [n] (apply * (range 1 (inc n))))),
+   catalan-triangle
+     (fn [n k]
+       (let [n (dec n), k (- n k -1)]
+         (/
+           (*
+             (! (+ n k))
+             (inc (- n k)))
+           (! k)
+           (! (inc n)))))]
+  (letfn
+    [(nth-tree-of-order
+       [order n]
+       (prn (list 'nth-tree-of-order order n))
+       (loop [degree 1, n n]
+         (let [c (trees-with-degree order degree)]
+           (if (> n c)
+             (recur (inc degree) (- n c))
+             (nth-tree-with-degree order degree n)))))
+     (trees-with-degree [order degree]
+       (let [n (dec order)
+             k degree]
+         (catalan-triangle n k)))
+     (nth-tree-with-degree [order degree n]
+       (prn (list 'nth-tree-with-degree order degree n))
+       (let [free-vertices (- order 1 degree)]
+         ; first order is between 1 and (inc free-vertices) inclusive
+         ; first-order is the order of the first child, including the first
+         ; child's root
+         (loop [first-order (inc free-vertices), n n]
+           (let [too (trees-of-order first-order),
+                 twd (trees-with-degree (- order first-order) (dec degree)),
+                 number-of-these (* too twd)]
+             (if (> n number-of-these)
+               (recur (dec first-order) (- n number-of-these))
+               (let [pair-type (cartesian-product-type
+                                 (integer-range-type 1 (inc too))
+                                 (integer-range-type 1 (inc twd))),
+                     [first-index rest-index] (to pair-type n),
+                     first-tree (nth-tree-of-order first-order first-index),
+                     rest-forest (nth-tree-with-degree (- order first-order) (dec degree) rest-index)]
+                 (cons first-tree rest-forest)))))))]
+    (def catalan-triangle catalan-triangle)
+    (def trees-of-order trees-of-order)
+    (def nth-tree-of-order nth-tree-of-order)
+    (def trees-with-degree trees-with-degree)
+    (def nth-tree-with-degree nth-tree-with-degree)
+    (def EMPTY-LISTS
+      (new InfiniteDataType
+        (fn [n]
+          (loop [order 1, n n]
+            (let [too (trees-of-order order)]
+              (if (> n too)
+                (recur (inc order) (- n too))
+                (nth-tree-of-order order n)))))
+        (fn [coll])
+        (fn f [coll]
+          (and (sequential? coll) (every? f coll)))))))
 
 ; Idea: this doesn't seem to be a very even definition,
 ;       for example note the superexponential growth of
