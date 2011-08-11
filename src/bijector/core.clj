@@ -439,6 +439,14 @@
       (fn [x] (from @t x))
       (fn [x] (element? @t x)))))
 
+(let [catalan (fn [n] (apply * (for [k (range 2 (inc n))] (/ (+ n k) k))))]
+  (def EMPTY-LISTS
+    (new InfiniteType
+      (fn [n])
+      (fn [coll])
+      (fn f [coll]
+        (and (sequential? coll) (every? f coll))))))
+
 ; Idea: this doesn't seem to be a very even definition,
 ;       for example note the superexponential growth of
 ;       the sequence [1], [[1]], [[[1]]], [[[[1]]]], ...
