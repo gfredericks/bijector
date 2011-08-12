@@ -17,6 +17,14 @@
   [(comp (partial to t2) (partial from t1))
    (comp (partial to t1) (partial from t2))])
 
+(defmacro def-converters
+  "E.g.,
+    (defconverters to-int to-ascii INTEGERS SIMPLE-ASCII)"
+  [name1 name2 type1 type2]
+  `(let [[f1# f2#] (make-converters-between ~type1 ~type2)]
+     (def ~name1 f2#)
+     (def ~name2 f1#)))
+
 (defrecord DataType [card t f e]
   IDataType
   (cardinality [_] card)
