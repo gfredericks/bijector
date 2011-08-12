@@ -600,3 +600,24 @@
     (fn f [coll]
       (and (sequential? coll)
            (every? #(or (natural? %) (f %)) coll)))))
+
+(defn nested-lists-of
+  "Creates nested lists of an infinite type t, which should not contain any elements that are
+  lists (else there will be ambiguity)."
+  [t]
+  {:pre [(infinite? t)]}
+  (wrap-type NESTED-NATURAL-LISTS
+    (fn f [natural-list]
+      (vec
+        (for [el natural-list]
+          (if (natural? el)
+            (to t el)
+            (f el)))))
+    (fn f [t-list]
+      (for [el t-list]
+        (if (element? t el)
+          (from t el)
+          (f el))))
+    (fn f [coll]
+      (and (sequential? coll)
+           (every? #(or (element? t %) (f %)) coll)))))

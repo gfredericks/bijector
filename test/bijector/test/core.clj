@@ -123,3 +123,6 @@
     [[[[[[[[[[[]]]]]]]]]]]
     [[][][][][][][][][][]]
     [[[[][][[]]]][[[][]]]]))
+
+(deftest nested-lists-of test
+  (test-a-type (-> SIMPLE-ASCII pairs-of sets-of nested-lists-of)))
