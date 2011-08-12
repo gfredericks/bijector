@@ -16,22 +16,24 @@ if nobody is interested in it.
 
 Just to be arbitrary, let's try converting between hex strings and triples of integers:
 
-    user=> (use 'bijector.core')
-    nil
-    user=> (def HEX-STRINGS (strings-with-chars "0123456789abcdef"))
-    #'user/HEX-STRINGS
-    user=> (def INT-TRIPLES (tuples-of 3 INTEGERS))
-    #'user/INT-TRIPLES
-    user=> (let [[f1 f2] (make-converters-between HEX-STRINGS INT-TRIPLES)] (def to-triples f1) (def to-hex f2))
-    #'user/to-hex
-    user=> (to-hex [77,77,77])
-    "c2268cf0"
-    user=> (to-triples *1)
-    (77 77 77)
-    user=> (to-triples "10ff9303b5478713931b6fb4221fa3007c7da728")
-    (-566312798866180140005020149758 421504070 -109516)
-    user=> (to-hex *1)
-    "10ff9303b5478713931b6fb4221fa3007c7da728"
+```clojure
+user=> (use 'bijector.core)
+nil
+user=> (def HEX-STRINGS (strings-with-chars "0123456789abcdef"))
+#'user/HEX-STRINGS
+user=> (def INT-TRIPLES (tuples-of 3 INTEGERS))
+#'user/INT-TRIPLES
+user=> (def-converters to-triples to-hex INT-TRIPLES HEX-STRINGS)
+#'user/to-hex
+user=> (to-hex [77 77 77])
+"c2268cf0"
+user=> (to-triples *1)
+(77 77 77)
+user=> (to-triples "10ff9303b5478713931b6fb4221fa3007c7da728")
+(-566312798866180140005020149758 421504070 -109516)
+user=> (to-hex *1)
+"10ff9303b5478713931b6fb4221fa3007c7da728"
+```
 
 ## API
 
