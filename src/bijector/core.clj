@@ -466,9 +466,17 @@
              (if (> n c)
                (recur (inc degree) (- n c))
                (nth-tree-with-degree order degree n))))))
+     (tree-order
+       [coll]
+       (inc (apply + (map tree-order coll))))
      (tree-to-nth-of-order
        [order tree]
-       )
+       {:pre [(pos? order)]}
+       (if (and (= 1 order) (empty? tree))
+         1
+         (let [degree (count tree)]
+           (+ (trees-with-smaller-degree order degree)
+              (tree-to-nth-of-degree order degree tree)))))
      (trees-with-degree
        [order degree]
        (let [n (dec order)
@@ -496,15 +504,31 @@
                        rest-forest (nth-tree-with-degree (- order first-order) (dec degree) rest-index)]
                    (vec (cons first-tree rest-forest))))))))),
      (tree-to-nth-of-degree
-       [order degree tree])
+       [order degree tree]
+       {:pre [(pos? order) (pos? degree)]}
+       (if (= 1 degree)
+         (tree-to-nth-of-order (dec order) (first tree))
+         (let [first-order (tree-order (first tree)),
+               rest-order (- order first-order),
+               first-cardinality (trees-with-order first-order),
+               rest-cardinality (trees-with-degree rest-order (dec degree)),
+               trees-with-larger-first-order
+                 (apply +
+                   (for [forder (range (inc first-order) (inc (- order degree)))]
+                     (* (trees-with-order forder)
+                        (trees-with-degree (- order forder) (dec degree))))),
+               pair-type (cartesian-product-type
+                           (integer-range-type 1 (inc first-cardinality))
+                           (integer-range-type 1 (inc rest-cardinality)))]
+           (+ trees-with-larger-first-order
+              (from pair-type [(tree-to-nth-of-order first-order (first tree))
+                               (tree-to-nth-of-degree rest-order (dec degree) (rest tree))])))))
      (trees-with-smaller-order
        [order]
-       (apply + (for [o (range 1 order)] (trees-with-order o))))]
-;   (def catalan-triangle catalan-triangle)
-;   (def trees-with-order trees-with-order)
-;   (def nth-tree-with-order nth-tree-with-order)
-;   (def trees-with-degree trees-with-degree)
-;   (def nth-tree-with-degree nth-tree-with-degree)
+       (apply + (for [o (range 1 order)] (trees-with-order o))))
+     (trees-with-smaller-degree
+       [order degree]
+       (apply + (for [d (range 1 degree)] (trees-with-degree order d))))]
     (def EMPTY-LISTS
       (new InfiniteDataType
         (fn [n]
@@ -516,35 +540,9 @@
         (fn f [coll]
           (if (empty? coll)
             1
-            (let [degree (count coll),
-                  order-counter (fn g [coll] (inc (apply + (map g coll)))),
-                  total-order (order-counter coll)]
-              (+ (trees-with-smaller-order total-order)
-                (if (= degree 1) ; this case might be covered by the general computation...
-                  (f (first coll))
-                  (let [first-order (order-counter (first coll)),
-                        rest-order (- total-order first-order 1),
-                        first-cardinality (trees-with-order first-order),
-                        rest-cardinality (trees-with-degree (inc rest-order) (dec degree)),
-                        pair-type (cartesian-product-type
-                                    (integer-range-type 1 (inc first-cardinality))
-                                    (integer-range-type 1 (inc rest-cardinality))),
-                        trees-with-smaller-degree
-                          (apply +
-                            (for [degree (range 1 degree)]
-                              (trees-with-degree order degree))),
-                        trees-with-larger-first-order
-                          (apply +
-                            (for [first-order (range (inc first-order) (inc (- total-order degree)))]
-                              (* (trees-with-order first-order)
-                                 (trees-with-degree (- total-order first-order) (dec degree)))))]
-                    (+ trees-with-smaller-degree
-                       trees-with-larger-first-order
-                       (from pair-type [(f (first coll)) (f (rest coll))]))
-
-              )
-            )
-          )
+            (let [order (tree-order coll)]
+              (+ (trees-with-smaller-order order)
+                 (tree-to-nth-of-order order coll)))))
         (fn f [coll]
           (and (sequential? coll) (every? f coll)))))))
 

@@ -115,3 +115,11 @@
         (test-a-type (cartesian-product-type t1 t3 t2) (range 1 100))
         (test-a-type (cartesian-product-type t2 t3 t1) (range 1 100))
         (test-a-type (cartesian-product-type t3 t2 t1) (range 1 100))))))
+
+(deftest empty-lists-test
+  (test-a-type EMPTY-LISTS)
+  (type-has-elements EMPTY-LISTS
+    []
+    [[[[[[[[[[[]]]]]]]]]]]
+    [[][][][][][][][][][]]
+    [[[[][][[]]]][[[][]]]]))
