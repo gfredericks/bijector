@@ -447,15 +447,156 @@
       (fn [x] (from @t x))
       (fn [x] (element? @t x)))))
 
-; Idea: this doesn't seem to be a very even definition,
-;       for example note the superexponential growth of
-;       the sequence [1], [[1]], [[[1]]], [[[[1]]]], ...
-;       when it ought to only be exponential. There might
-;       be cool tricks we could do similar to how the
-;       NATURAL-LISTS type was defined, but using base 5 or
-;       something like that.
+(defn- tree-order
+  "Given an element of EMPTY-LISTS, returns the number of lists it contains."
+  [coll]
+  (inc (apply + (map tree-order coll))))
+
+; TODO: Probably a lot of the mathy catalan-y functions defined here could be done
+; more efficiently with some number-theory trick or another
+(let
+  [catalan
+     (memoize
+       (fn [n] (apply * (for [k (range 2 (inc n))] (/ (+ n k) k))))),
+   trees-with-order (comp catalan dec),
+   ! (memoize (fn [n] (apply * (range 1 (inc n))))),
+   catalan-triangle
+     (fn [n k]
+       (let [n (dec n), k (- n k -1)]
+         (/
+           (*
+             (! (+ n k))
+             (inc (- n k)))
+           (! k)
+           (! (inc n)))))]
+  (letfn
+    [(nth-tree-with-order
+       [order n]
+       (if (= 1 order)
+         (if (> 1 n)
+           (throw (new Exception "CRAZY"))
+           [])
+         (loop [degree 1, n n]
+           (let [c (trees-with-degree order degree)]
+             (if (> n c)
+               (recur (inc degree) (- n c))
+               (nth-tree-with-degree order degree n))))))
+     (tree-to-nth-of-order
+       [order tree]
+       {:pre [(pos? order)]}
+       (if (and (= 1 order) (empty? tree))
+         1
+         (let [degree (count tree)]
+           (+ (trees-with-smaller-degree order degree)
+              (tree-to-nth-of-degree order degree tree)))))
+     (trees-with-degree
+       [order degree]
+       (let [n (dec order)
+             k degree]
+         (catalan-triangle n k)))
+     (nth-tree-with-degree
+       [order degree n]
+       (if (= 1 degree)
+         [(nth-tree-with-order (dec order) n)]
+         (let [free-vertices (- order 1 degree)]
+           ; first order is between 1 and (inc free-vertices) inclusive
+           ; first-order is the order of the first child, including the first
+           ; child's root
+           (loop [first-order (inc free-vertices), n n]
+             (let [too (trees-with-order first-order),
+                   twd (trees-with-degree (- order first-order) (dec degree)),
+                   number-of-these (* too twd)]
+               (if (> n number-of-these)
+                 (recur (dec first-order) (- n number-of-these))
+                 (let [pair-type (cartesian-product-type
+                                   (integer-range-type 1 (inc too))
+                                   (integer-range-type 1 (inc twd))),
+                       [first-index rest-index] (to pair-type n),
+                       first-tree (nth-tree-with-order first-order first-index),
+                       rest-forest (nth-tree-with-degree (- order first-order) (dec degree) rest-index)]
+                   (vec (cons first-tree rest-forest))))))))),
+     (tree-to-nth-of-degree
+       [order degree tree]
+       {:pre [(pos? order) (pos? degree)]}
+       (if (= 1 degree)
+         (tree-to-nth-of-order (dec order) (first tree))
+         (let [first-order (tree-order (first tree)),
+               rest-order (- order first-order),
+               first-cardinality (trees-with-order first-order),
+               rest-cardinality (trees-with-degree rest-order (dec degree)),
+               trees-with-larger-first-order
+                 (apply +
+                   (for [forder (range (inc first-order) (inc (- order degree)))]
+                     (* (trees-with-order forder)
+                        (trees-with-degree (- order forder) (dec degree))))),
+               pair-type (cartesian-product-type
+                           (integer-range-type 1 (inc first-cardinality))
+                           (integer-range-type 1 (inc rest-cardinality)))]
+           (+ trees-with-larger-first-order
+              (from pair-type [(tree-to-nth-of-order first-order (first tree))
+                               (tree-to-nth-of-degree rest-order (dec degree) (rest tree))])))))
+     (trees-with-smaller-order
+       [order]
+       (apply + (for [o (range 1 order)] (trees-with-order o))))
+     (trees-with-smaller-degree
+       [order degree]
+       (apply + (for [d (range 1 degree)] (trees-with-degree order d))))]
+    (def EMPTY-LISTS
+      (new InfiniteDataType
+        (fn [n]
+          (loop [order 1, n n]
+            (let [too (trees-with-order order)]
+              (if (> n too)
+                (recur (inc order) (- n too))
+                (nth-tree-with-order order n)))))
+        (fn f [coll]
+          (if (empty? coll)
+            1
+            (let [order (tree-order coll)]
+              (+ (trees-with-smaller-order order)
+                 (tree-to-nth-of-order order coll)))))
+        (fn f [coll]
+          (and (sequential? coll) (every? f coll)))))))
+
 (def NESTED-NATURAL-LISTS
-  (lists-of
-    (infinite-union-type
-      NATURALS
-      (stub-type (fn [] NESTED-NATURAL-LISTS)))))
+  (wrap-type (cartesian-product-type EMPTY-LISTS NATURALS)
+    (fn [[empty-list n]]
+      (let [lists-type (tuples-of (dec (* 2 (tree-order empty-list))) (lists-of NATURALS)),
+            nat-lists (to lists-type n),
+            apply-lists
+              (fn apply-lists [empty-list [first-nat & nats]]
+                (vec
+                  (concat
+                    first-nat
+                    (loop [nats nats, res [], empty-list empty-list]
+                      (if (empty? empty-list)
+                        res
+                        (let [[next-empty & more-empties] empty-list,
+                              [nats-for-recur more-nats] (split-at (dec (* 2 (tree-order next-empty))) nats)]
+                          (recur
+                            (rest more-nats)
+                            (concat
+                              res
+                              [(apply-lists next-empty nats-for-recur)]
+                              (first more-nats))
+                            more-empties)))))))]
+        (apply-lists empty-list nat-lists)))
+    (fn [numbered-list]
+      (let [separate-numbered-list
+              (fn separate-numbered-list [numbered-list]
+                (let [[initial-nats numbered-list] (split-with natural? numbered-list)]
+                  (loop [empties [], nats [initial-nats], numbered-list numbered-list]
+                    (if (empty? numbered-list)
+                      [empties nats]
+                      (let [[emptied-list its-nats] (separate-numbered-list (first numbered-list)),
+                            [next-nats even-more-stuff] (split-with natural? (rest numbered-list))] 
+                        (recur
+                          (conj empties emptied-list)
+                          (concat nats its-nats [next-nats])
+                          even-more-stuff)))))),
+            [empty-list nat-lists] (separate-numbered-list numbered-list),
+            lists-type (tuples-of (dec (* 2 (tree-order empty-list))) (lists-of NATURALS))]
+        [empty-list (from lists-type nat-lists)]))
+    (fn f [coll]
+      (and (sequential? coll)
+           (every? #(or (natural? %) (f %)) coll)))))

@@ -43,6 +43,7 @@ Just to be arbitrary, let's try converting between hex strings and triples of in
 * `NATURAL-LISTS`: lists of `NATURALS`, e.g. `[]`, `[1,3929]`, and `[2,2,2,2,2,2]`
 * `NATURAL-SETS`: sets of `NATURALS`, e.g. `#{}`, `#{55 3824}`, and `#{9 99 999 9999}`
 * `SIMPLE-ASCII`: strings containing any of the "normal" ASCII characters, e.g. `"thomas"`, `"\n\r~!@#"`, and `""`
+* `NESTED-NATURAL-LISTS`: nested lists of `NATURALS`, e.g. `[]`, `[1,2,[],3]`, and `[[4 [2] [] 5]]`
 
 ### Type-Constructors
 
@@ -58,7 +59,7 @@ Functions that take one or more types as arguments and return a new type.
 
 * `lists-of`: given a type `t`, creates a new type consisting of lists of elements of `t`
 * `sets-of`: given a type `t`, creates a new type consisting of sets of elements of `t`
-* `cartesian-product-type`: given N types, creates a new type consisting of lists of length N
+* `cartesian-product-type`: given `N` types, creates a new type consisting of lists of length `N`
   where the first item in the list is an element of the first type, etc.
 * `union-type`: if you've read this far you probably know what this does
 * `tuples-of`: like `lists-of` but with a given fixed length

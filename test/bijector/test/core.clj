@@ -29,7 +29,7 @@
   (let [t (union-type NATURAL-LISTS SIMPLE-ASCII)]
     (type-has-elements t [1 2 3] [] "" "[1 2 3]")))
 
-(deftest recursive-types-test
+(deftest nested-natural-lists-test
   (test-a-type NESTED-NATURAL-LISTS)
   (type-has-elements NESTED-NATURAL-LISTS [] [[[]]] [[2 3 [4]] 5 6 []] (range 1 20)))
 
@@ -115,3 +115,11 @@
         (test-a-type (cartesian-product-type t1 t3 t2) (range 1 100))
         (test-a-type (cartesian-product-type t2 t3 t1) (range 1 100))
         (test-a-type (cartesian-product-type t3 t2 t1) (range 1 100))))))
+
+(deftest empty-lists-test
+  (test-a-type EMPTY-LISTS)
+  (type-has-elements EMPTY-LISTS
+    []
+    [[[[[[[[[[[]]]]]]]]]]]
+    [[][][][][][][][][][]]
+    [[[[][][[]]]][[[][]]]]))
