@@ -447,6 +447,13 @@
       (fn [x] (from @t x))
       (fn [x] (element? @t x)))))
 
+(defn- tree-order
+  "Given an element of EMPTY-LISTS, returns the number of lists it contains."
+  [coll]
+  (inc (apply + (map tree-order coll))))
+
+; TODO: Probably a lot of the mathy catalan-y functions defined here could be done
+; more efficiently with some number-theory trick or another
 (let
   [catalan
      (memoize
@@ -474,9 +481,6 @@
              (if (> n c)
                (recur (inc degree) (- n c))
                (nth-tree-with-degree order degree n))))))
-     (tree-order
-       [coll]
-       (inc (apply + (map tree-order coll))))
      (tree-to-nth-of-order
        [order tree]
        {:pre [(pos? order)]}
@@ -554,15 +558,45 @@
         (fn f [coll]
           (and (sequential? coll) (every? f coll)))))))
 
-; Idea: this doesn't seem to be a very even definition,
-;       for example note the superexponential growth of
-;       the sequence [1], [[1]], [[[1]]], [[[[1]]]], ...
-;       when it ought to only be exponential. There might
-;       be cool tricks we could do similar to how the
-;       NATURAL-LISTS type was defined, but using base 5 or
-;       something like that.
 (def NESTED-NATURAL-LISTS
-  (lists-of
-    (infinite-union-type
-      NATURALS
-      (stub-type (fn [] NESTED-NATURAL-LISTS)))))
+  (wrap-type (cartesian-product-type EMPTY-LISTS NATURALS)
+    (fn [[empty-list n]]
+      (let [lists-type (tuples-of (dec (* 2 (tree-order empty-list))) (lists-of NATURALS)),
+            nat-lists (to lists-type n),
+            apply-lists
+              (fn apply-lists [empty-list [first-nat & nats]]
+                (vec
+                  (concat
+                    first-nat
+                    (loop [nats nats, res [], empty-list empty-list]
+                      (if (empty? empty-list)
+                        res
+                        (let [[next-empty & more-empties] empty-list,
+                              [nats-for-recur more-nats] (split-at (dec (* 2 (tree-order next-empty))) nats)]
+                          (recur
+                            (rest more-nats)
+                            (concat
+                              res
+                              [(apply-lists next-empty nats-for-recur)]
+                              (first more-nats))
+                            more-empties)))))))]
+        (apply-lists empty-list nat-lists)))
+    (fn [numbered-list]
+      (let [separate-numbered-list
+              (fn separate-numbered-list [numbered-list]
+                (let [[initial-nats numbered-list] (split-with natural? numbered-list)]
+                  (loop [empties [], nats [initial-nats], numbered-list numbered-list]
+                    (if (empty? numbered-list)
+                      [empties nats]
+                      (let [[emptied-list its-nats] (separate-numbered-list (first numbered-list)),
+                            [next-nats even-more-stuff] (split-with natural? (rest numbered-list))] 
+                        (recur
+                          (conj empties emptied-list)
+                          (concat nats its-nats [next-nats])
+                          even-more-stuff)))))),
+            [empty-list nat-lists] (separate-numbered-list numbered-list),
+            lists-type (tuples-of (dec (* 2 (tree-order empty-list))) (lists-of NATURALS))]
+        [empty-list (from lists-type nat-lists)]))
+    (fn f [coll]
+      (and (sequential? coll)
+           (every? #(or (natural? %) (f %)) coll)))))
