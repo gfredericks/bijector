@@ -67,7 +67,7 @@
 
 (defn json-maps
   [value-t]
-  (union-type (new EnumerationDataType [{}]) (nonempty-json-maps value-t)))
+  (with (nonempty-json-maps value-t) {}))
 
 (declare SIMPLE-JSON)
 
