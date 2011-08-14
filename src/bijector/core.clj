@@ -600,3 +600,25 @@
     (fn f [coll]
       (and (sequential? coll)
            (every? #(or (natural? %) (f %)) coll)))))
+
+(defn maps-from-to
+  "For the moment the key type must be sortable. It's definitely possible
+  to rewrite this so that it's not necessary."
+  [t-keys t-values]
+  {:pre [(infinite? t-keys) (infinite? t-values)]}
+  (let [keys-type (without (sets-of t-keys) #{}),
+        values-types (memoize #(tuples-of % t-values))]
+    (with
+      (wrap-type (cartesian-product-type keys-type NATURALS)
+        (fn [[keyset b]]
+          (let [values (to (values-types (count keyset)) b)]
+            (zipmap (sort keyset) values)))
+        (fn [m]
+          (vector
+            (set (keys m))
+            (from (values-types (count m)) (map m (sort (keys m))))))
+        (fn [m]
+          (and (map? m)
+               (every? #(element? t-keys %) (keys m))
+               (every? #(element? t-values %) (vals m)))))
+      {})))
