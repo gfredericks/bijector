@@ -123,3 +123,11 @@
     [[[[[[[[[[[]]]]]]]]]]]
     [[][][][][][][][][][]]
     [[[[][][[]]]][[[][]]]]))
+
+(deftest maps-from-to-test
+  (test-a-type (maps-from-to INTEGERS SIMPLE-ASCII))
+  (test-a-type (maps-from-to SIMPLE-ASCII (pairs-of NATURALS)))
+  (type-has-elements (maps-from-to SIMPLE-ASCII INTEGERS)
+    {}
+    {"Hey man this is a good test" 12}
+    {"foo" 4844 "far" 0 "" -1}))

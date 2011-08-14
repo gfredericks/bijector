@@ -48,26 +48,9 @@
                 diff)))))
       (fn [s] (and (element? SIMPLE-ASCII s) (not (empty? s)))))))
 
-(defn nonempty-json-maps
-  [value-t]
-  (let [key-type (without (sets-of SIMPLE-ASCII) #{}),
-        val-type (memoize #(tuples-of % value-t))]
-    (wrap-type
-      (pairs-of NATURALS)
-      (fn [[a b]]
-        (let [key-set (to key-type a),
-              value-list (to (val-type (count key-set)) b)]
-          (zipmap (sort key-set) value-list)))
-      (fn [m]
-        (let [left-n (from key-type (set (keys m))),
-              right-n (from (val-type (count m)) (map val (sort-by key m)))]
-          [left-n right-n]))
-      (fn [m]
-        (and (map? m) (every? #(and (string? (key %)) (element? value-t (val %))) m))))))
-
 (defn json-maps
   [value-t]
-  (union-type (new EnumerationDataType [{}]) (nonempty-json-maps value-t)))
+  (maps-from-to SIMPLE-ASCII value-t))
 
 (declare SIMPLE-JSON)
 
