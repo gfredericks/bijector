@@ -268,3 +268,40 @@
           (for [row-string row-strings]
             (map decimal-string-to-int (string/split row-string #",")))))
       (fn [s] true))))
+
+
+;; POLYNOMIALS
+;;   wait a minute...the e.e. issue here hinges on whether we define a polynomial
+;;   like x^500 + 1 to have the intermediate sections as part of its representiation-length,
+;;   which is obviously less than idea. Cool challenge is to remove that so that polyomials
+;;   like x^285235823752338738734 come decently early.
+
+(def raw-polynomials
+  (let [rats-no-zero (without RATIONALS (ratio 0))]
+    (wrap-type
+      NATURAL-LISTS
+      (fn [[nat & nats]]
+        (cons
+          (to rats-no-zero nat)
+          (for [nat nats] (to RATIONALS nat))))
+      (fn [[nzq & qs]]
+        (cons
+          (from rats-no-zero nzq)
+          (for [q qs] (from RATIONALS q))))
+      (fn [coll]
+        (and
+          (sequential? coll)
+          (element? rats-no-zero (first coll))
+          (every? #(element? RATIONALS %) (rest coll)))))))
+
+(defn- polynomial-to-string
+  [qs]
+  (cond
+    (= 1 (count qs))))
+
+
+(def POLYNOMIALS
+  (wrap-type raw-polynomials
+    polynomial-to-string
+    string-to-polynomial
+    looks-like-polynomial?))
