@@ -260,28 +260,35 @@
 ;;   like x^285235823752338738734 come decently early.
 
 (def raw-polynomials
-  (let [rats-no-zero (without RATIONALS (ratio 0))]
-    (wrap-type
-      NATURAL-LISTS
-      (fn [[nat & nats]]
-        (cons
-          (to rats-no-zero nat)
-          (for [nat nats] (to RATIONALS nat))))
-      (fn [[nzq & qs]]
-        (cons
-          (from rats-no-zero nzq)
-          (for [q qs] (from RATIONALS q))))
-      (fn [coll]
-        (and
-          (sequential? coll)
-          (element? rats-no-zero (first coll))
-          (every? #(element? RATIONALS %) (rest coll)))))))
+  (without
+    (maps-from-to
+      (with NATURALS 0)
+      (without RATIONALS (ratio 0)))
+    {}))
 
 (defn- polynomial-to-string
-  [qs]
-  (cond
-    (= 1 (count qs))))
+  [m]
+  (let [rat-str (fn [q]
+                  (str
+                    (if (= 1 (denominator q))
+                      (numerator q)
+                      q)))]
+    (string/join "+"
+      (for [p (-> m keys sort reverse)]
+        (cond
+          (= 0 p)
+            (rat-str (m 0))
+          (= 1 p)
+            (if (= 1 (m p))
+              "x"
+              (str (rat-str (m p)) "x"))
+          :else
+            (if (= 1 (m p))
+              (format "x^%d" p)
+              (format "%sx^%d" (rat-str (m p)) p)))))))
 
+(defn string-to-polynomial [])
+(defn looks-like-polynomial? [])
 
 (def POLYNOMIALS
   (wrap-type raw-polynomials
