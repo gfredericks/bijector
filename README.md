@@ -78,3 +78,12 @@ Functions that take one or more types as arguments and return a new type.
   E.g., is the set of all ASCII strings that are _not_ valid JSON
   e.e.?
 * What about type intersections?
+
+### Ideas
+
+* e.e. := efficiently enumerable
+* e.e.e. := elegantly efficiently enumerable -- at this level we would try to distinguish
+  from the trivial injection-based bijections.
+* A test for e.e. that I just thought of -- we could look at the limiting density of a given
+  property as the length of representation increases. E.g., for the nested-lists, examine the
+  average order of the nested lists.
