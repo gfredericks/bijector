@@ -33,6 +33,10 @@
   (test-a-type NESTED-NATURAL-LISTS)
   (type-has-elements NESTED-NATURAL-LISTS [] [[[]]] [[2 3 [4]] 5 6 []] (range 1 20)))
 
+(deftest natural-bags-test
+  (test-a-type NATURAL-BAGS)
+  (type-has-elements NATURAL-BAGS [] [1 2] [1 2 3 3 4] [8382497] [1 4839294]))
+
 (deftest natural-sets-test
   (test-a-type NATURAL-SETS)
   (type-has-elements NATURAL-SETS #{} #{1 2} #{1 2 3 4} #{8382497} #{4839294 1}))

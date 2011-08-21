@@ -44,6 +44,7 @@ user=> (to-hex *1)
 * `INTEGERS`: the numbers ...,-3,-2,-1,0,1,2,3,...
 * `NATURAL-LISTS`: lists of `NATURALS`, e.g. `[]`, `[1,3929]`, and `[2,2,2,2,2,2]`
 * `NATURAL-SETS`: sets of `NATURALS`, e.g. `#{}`, `#{55 3824}`, and `#{9 99 999 9999}`
+* `NATURAL-BAGS`: bags (i.e., multisets) of `NATURALS`, e.g. `[]`, `[55 3824]`, and `[9 9 9 9999]`
 * `SIMPLE-ASCII`: strings containing any of the "normal" ASCII characters, e.g. `"thomas"`, `"\n\r~!@#"`, and `""`
 * `NESTED-NATURAL-LISTS`: nested lists of `NATURALS`, e.g. `[]`, `[1,2,[],3]`, and `[[4 [2] [] 5]]`
 

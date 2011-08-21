@@ -189,6 +189,22 @@
         (map - in-order (cons 0 in-order))))
     (fn [coll] (and (set? coll) (every? natural? coll)))))
 
+(def NATURAL-BAGS
+  (wrap-type
+    NATURAL-LISTS
+    (fn [n-list]
+      (subvec
+        (reduce
+          (fn [coll x]
+            (conj coll (+ -1 x (last coll))))
+          [1]
+          n-list)
+        1))
+    (fn [n-bag]
+      (let [in-order (sort n-bag)]
+        (map (comp inc -) in-order (cons 1 in-order))))
+    (fn [coll] (and (coll? coll) (every? natural? coll)))))
+
 (defn- sets-of-infinite-type
   [t]
   (wrap-type
