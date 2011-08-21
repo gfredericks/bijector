@@ -1,5 +1,6 @@
 (ns bijector.words
-  (:use bijector.core))
+  (:use bijector.core)
+  (:import bijector.core.EnumerationDataType))
 
 (def words
   {:interjection
@@ -275,3 +276,7 @@
       "transfer" "travel" "treat" "try" "turn" "understand" "undertake" "use"
       "vary" "visit" "vote" "wait" "walk" "want" "warn" "wash" "watch" "wear"
       "welcome" "win" "wish" "withdraw" "wonder" "work" "worry" "write"]})
+
+(def WORDS
+  (let [flat-words (apply concat (vals words))]
+    (new EnumerationDataType flat-words)))
