@@ -1,9 +1,6 @@
 (ns bijector.core
-  (:require [clojure.browser.dom :as dom]))
+  (:require [goog.math.Integer :as mathint]))
 
-(defn pooty-toot
-  []
-  (.log js/console "TOMMY")
-  :tommy)
-
-
+(defn bigint
+  [n]
+  (mathint/fromString (str n)))
