@@ -88,3 +88,4 @@ Functions that take one or more types as arguments and return a new type.
 * A test for e.e. that I just thought of -- we could look at the limiting density of a given
   property as the length of representation increases. E.g., for the nested-lists, examine the
   average order of the nested lists.
+* Enumerating elements of a regular language: could we use [this algorithm](http://cstheory.stackexchange.com/questions/8200/counting-words-accepted-by-a-regular-grammar) to do it?
