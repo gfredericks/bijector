@@ -89,3 +89,4 @@ Functions that take one or more types as arguments and return a new type.
   property as the length of representation increases. E.g., for the nested-lists, examine the
   average order of the nested lists.
 * Enumerating elements of a regular language: could we use [this algorithm](http://cstheory.stackexchange.com/questions/8200/counting-words-accepted-by-a-regular-grammar) to do it?
+* Oh hey what about huffman codes? Given a set of character frequencies, could we build the huffman tree and then enumerate all strings in order of their encoded length?
