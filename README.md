@@ -2,12 +2,19 @@
 
 Bijector is a Clojure library for defining and converting between datatypes
 in a bijective manner (meaning each element in one type has a corresponding
-element in the other type and vice versa). This is done using a technique
-I call efficient enumerations, which has the following characteristics:
+element in the other type and vice versa). The desired constraint is that the
+bijections should be efficient, meaning:
 
-* I have so far been unable to rigorously define it.
-* I have never successfully convinced anyone that it is not rubbish.
-* At the moment I do not have the energy to say anything else about it.
+* It should not be possible to input an instance of a type of a reasonable
+  size and have the computer run out of memory because the corresponding
+  instance of the other type is too large.
+* It should not be possible to input an instance of a type of a reasonable
+  size and have the computer never return because the conversion takes too
+  long.
+
+You might be able to rigorously define these things mathematically, but I
+haven't bothered to, mostly because I would then have to check that all the
+techniques used in this library qualify.
 
 At the moment the library is not __too__ user-friendly, and might never be
 if nobody is interested in it.
