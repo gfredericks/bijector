@@ -3,18 +3,18 @@
 
 (def string-partitions
   (memoize
-    (fn [length partitions]
-      {:pre [(not (neg? length)) (pos? partitions)]}
-      (cond
-        (or (= 0 length) (= 1 partitions))
-          1
-        (= 1 length)
-          partitions
-        :else
-          (apply + (for [x (range (inc length))]
-                     (string-partitions
-                       (- length x)
-                       (dec partitions))))))))
+   (fn [length partitions]
+     {:pre [(not (neg? length)) (pos? partitions)]}
+     (cond
+       (or (= 0 length) (= 1 partitions))
+       1
+       (= 1 length)
+       partitions
+       :else
+       (apply +' (for [x (range (inc length))]
+                   (string-partitions
+                    (- length x)
+                    (dec partitions))))))))
 
 (defn nth-partition
   [s partitions n]
@@ -52,7 +52,7 @@
   (if (< (count a) 2)
     1
     (let [total (apply + a)]
-      (apply +
+      (apply +'
         (partition-lengths-to-n (rest a))
         (for [x (range (first a))]
           (string-partitions (- total x) (dec (count a))))))))
@@ -62,16 +62,16 @@
   {:pre [(= partitions (count ss))]}
   (let [partition-count (count ss),
         s (apply str ss),
-        n (apply + (for [[x p] (map vector (range (count s)) (iterate #(* % 2) 1))]
+        n (apply + (for [[x p] (map vector (range (count s)) (iterate #(* % 2) 1N))]
                      (* p (string-partitions x partition-count)))),
         at-this-length (string-partitions (count s) partition-count),
-        s-num (if (empty? s) 0 (new BigInteger s 2)),
+        s-num (if (empty? s) 0 (bigint (BigInteger. s 2))),
         n (+ n (* at-this-length s-num))]
     (+ n (partition-lengths-to-n (map count ss)))))
 
 (defn- zero-padded
   [n length]
-  (let [s (.toString (bigint n) 2),
+  (let [s (.toString (biginteger n) 2),
         s (str
             (apply str (repeat (- length (count s)) "0"))
             s)]
@@ -82,7 +82,7 @@
   [partitions n]
   {:post [(= (count %) partitions)]}
   (let [[str-length n]
-         (loop [str-length 0, n n, p 1]
+         (loop [str-length 0, n n, p 1N]
            (let [k (* (string-partitions str-length partitions) p)]
              (if (> n k)
                (recur (inc str-length) (- n k) (* p 2))

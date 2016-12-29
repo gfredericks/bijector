@@ -1,6 +1,11 @@
 (ns bijector.core
-  (:use [clojure.contrib.seq-utils :only [separate]])
   (:require [bijector.string-partitions :as parts]))
+
+(defn separate
+  "Returns a vector:
+   [ (filter f s), (filter (complement f) s) ]"
+  [f s]
+  [(filter f s) (filter (complement f) s)])
 
 (defprotocol IDataType
   (cardinality [this])
@@ -41,7 +46,7 @@
 
 (defrecord EnumerationDataType [elements]
   IDataType
-  (cardinality [_] (count elements))
+  (cardinality [_] (bigint (count elements)))
   (to [_ n]
     (try
       (nth elements (dec n))
@@ -85,7 +90,7 @@
 
 (defn integer-range-type
   "Takes one or two arguments, with same meaning as clojure.core/range"
-  ([end] (integer-range-type 0 end)) 
+  ([end] (integer-range-type 0 end))
   ([start end]
     {:pre [(< start end)]}
     (new DataType
@@ -107,7 +112,7 @@
     (let [c (cardinality t)]
       (new InfiniteDataType
         (fn [n]
-          (loop [n n, [p & ps :as ps*] '(1)]
+          (loop [n n, [p & ps :as ps*] '(1N)]
             (if (> n p)
               (recur
                 (- n p)
@@ -120,8 +125,8 @@
                     (recur b ps (conj res (to t (inc a)))))
                   res)))))
         (fn [xs]
-          (let [smaller-lists (apply + (take (count xs) (iterate #(* c %) 1)))]
-            (loop [b 1, n (inc smaller-lists), [x & xs :as xs*] xs]
+          (let [smaller-lists (apply + (take (count xs) (iterate #(* c %) 1N)))]
+            (loop [b 1N, n (inc smaller-lists), [x & xs :as xs*] xs]
               (if (empty? xs*)
                 n
                 (recur
@@ -216,20 +221,20 @@
 (defn- sets-of-finite-type
   [t]
   (let [tcard (cardinality t),
-        card (apply * (repeat tcard 2))]
+        card (apply * (repeat tcard 2N))]
     (new DataType
       card
       (fn [n]
         (set
-          (let [n (bigint (dec n))]
+          (let [n (biginteger (dec n))]
             (for [x (range tcard), :when (.testBit n x)]
               (to t (inc x))))))
       (fn [obs]
         (inc
           (reduce
-            (fn [n ob]
+            (fn [^BigInteger n ob]
               (.setBit n (dec (from t ob))))
-            (bigint 0)
+            (biginteger 0)
             obs)))
       (fn [obs] (and (set? obs) (every? #(element? t %) obs))))))
 
@@ -252,9 +257,9 @@
   (wrap-type
     (binary-partitions-type length)
     (fn [ss]
-      (for [s ss] (new BigInteger (str "1" s) 2)))
+      (for [s ss] (bigint (new BigInteger (str "1" s) 2))))
     (fn [ns]
-      (for [n ns] (.substring (.toString (bigint n) 2) 1)))
+      (for [n ns] (.substring (.toString (biginteger n) 2) 1)))
     (fn [coll]
       (and (= length (count coll)) (every? natural? coll)))))
 
@@ -276,7 +281,7 @@
       list
       first
       #(and (= 1 (count %)) (element? (first ts) (first %))))
-    (let [c (apply * (map cardinality ts))]
+    (let [c (apply *' (map cardinality ts))]
       (new DataType
         c
         (fn [n]
@@ -296,7 +301,7 @@
                   (let [c (cardinality t)]
                     [(* multiple c)
                      (+ n (* multiple (dec (from t v))))]))
-                [1 0]
+                [1N 0N]
                 (map vector coll ts)))))
         (partial sequence-has-types? ts)))))
 
@@ -451,7 +456,7 @@
   " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\r")
 
 (def SIMPLE-ASCII (strings-with-chars simple-ascii-chars))
-    
+
 (defn stub-type
   "Takes a function that returns an infinite type, and returns a stub type that
   will call that function once the first time it is needed. This allows
@@ -473,14 +478,14 @@
 (let
   [catalan
      (memoize
-       (fn [n] (apply * (for [k (range 2 (inc n))] (/ (+ n k) k))))),
+       (fn [n] (apply *' (for [k (range 2 (inc n))] (/ (+ n k) k))))),
    trees-with-order (comp catalan dec),
-   ! (memoize (fn [n] (apply * (range 1 (inc n))))),
+   ! (memoize (fn [n] (apply *' (range 1 (inc n))))),
    catalan-triangle
      (fn [n k]
        (let [n (dec n), k (- n k -1)]
          (/
-           (*
+           (*'
              (! (+ n k))
              (inc (- n k)))
            (! k)
@@ -605,7 +610,7 @@
                     (if (empty? numbered-list)
                       [empties nats]
                       (let [[emptied-list its-nats] (separate-numbered-list (first numbered-list)),
-                            [next-nats even-more-stuff] (split-with natural? (rest numbered-list))] 
+                            [next-nats even-more-stuff] (split-with natural? (rest numbered-list))]
                         (recur
                           (conj empties emptied-list)
                           (concat nats its-nats [next-nats])

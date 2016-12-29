@@ -73,7 +73,7 @@
           (repeat parts "0")
           (repeat parts "0110")
           (for [n (range 3898934 (+ 3898934 parts))]
-            (.toString (bigint n) 2)))))))
+            (.toString (biginteger n) 2)))))))
 
 (deftest finite-cartesian-product-test
   (testing "fixed-length boolean lists"

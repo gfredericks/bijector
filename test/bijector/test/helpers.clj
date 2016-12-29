@@ -4,7 +4,7 @@
 
 (defn- **
   [a b]
-  (apply * (repeat b a)))
+  (apply *' (repeat b a)))
 
 (def nz
   (concat
@@ -30,4 +30,3 @@
         (is (integer? n))
         (is (pos? n))
         (is (= el (to t n)))))))
-
